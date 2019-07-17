@@ -5,6 +5,7 @@ import GameInfo   from './runtime/gameinfo'
 import Music      from './runtime/music'
 import DataBus    from './databus'
 import THREE      from './libs/three_modified'
+import ObjsURL    from '../objs/url'
 
 require('./libs/weapp-adapter.js')
 
@@ -13,8 +14,18 @@ let ctx = canvas.getContext('webgl', { antialias: true, preserveDrawingBuffer: t
 let databus = new DataBus()
 let renderer
 let camera
-let preLoadDone = false;
+let preLoadDone = false
 let scene
+let obj
+let downside
+
+let note1 = {
+  "time": 100,
+  "data": {
+    "type": 1,
+    "track": [{ "arc": 90, "delay": 0 }]
+  }
+}
 
 /**
  * 游戏主函数
@@ -24,36 +35,46 @@ export default class Main {
     // 维护当前requestAnimationFrame的id
     this.aniId    = 0
     scene = new THREE.Scene()
-    var mtlloader = new THREE.MTLLoader()
-    mtlloader.load('https://haurchefant-g.github.io/objs/loop1.mtl', function(material) {
-      var objloader = new THREE.OBJLoader()
-      objloader.setMaterials(material)
-      objloader.load('https://haurchefant-g.github.io/objs/loop1.obj', function(object) {
-		object.scale.set(1, 1, 1)
-		object.position.y = 20
-        scene.add(object)
-        preLoadDone = true
 
-      })
-    })
+    
+    preLoadDone = true
     //this.restart()
-    renderer = new THREE.WebGLRenderer({ context: ctx, canvas: canvas })
+    renderer = new THREE.WebGLRenderer({ context: ctx, canvas: canvas, alpha:true })
 
-    const winWidth = window.innerWidth
-    const winHeight = window.innerHeight
+    const winWidth = canvas.width
+    const winHeight = canvas.height
     const cameraAspect = winWidth / winHeight
 
-    renderer.setSize(winWidth, winHeight)
+    downside = -120 / cameraAspect * 0.6
+    
+    //renderer.setSize(winWidth, winHeight)
     renderer.setPixelRatio(window.devicePixelRatio)
 
     console.log("屏幕尺寸: " + winWidth + " x " + winHeight)
 
-	camera = new THREE.OrthographicCamera(-120, 120, -120 / cameraAspect, 120/cameraAspect,1,1000)
-	//camera = new THREE.PerspectiveCamera(75, cameraAspect, 1, 100000)
-	console.log(camera.position)
-	camera.position.set(0, 30, 120)
-	camera.lookAt(0,0,0)
+    this.loader('https://haurchefant-g.github.io/objs/loop1.mtl', 'https://haurchefant-g.github.io/objs/loop1.obj', function (object) {
+      object.scale.set(1, 1, 1)
+      object.position.y = downside
+      console.log(object)
+      scene.add(object)
+      preLoadDone = true
+    })
+    this.loader('https://haurchefant-g.github.io/objs/musicalnote2.mtl', 'https://haurchefant-g.github.io/objs/musicalnote2.obj', function (object) {
+      object.scale.set(1, 1, 1)
+      object.position.y = 0
+      scene.add(object)
+      preLoadDone = true
+    })
 
+	  camera = new THREE.OrthographicCamera(120, -120, 120 / cameraAspect, -120 / cameraAspect,1,100000)
+	  //camera = new THREE.PerspectiveCamera(75, cameraAspect, 1, 100000)
+	  console.log(camera.position)
+    camera.position.set(0, 120 / cameraAspect * 0.3, 100)
+    camera.lookAt(0, 0, 0)
+
+    var filesystem = wx.getFileSystemManager()
+    console.log(filesystem)
+    console.log(filesystem.getSavedFileList())
 
     // 添加环境光
     let ambientLight = new THREE.AmbientLight(0x999999)
@@ -63,13 +84,33 @@ export default class Main {
     var directionalLight = new THREE.DirectionalLight(0xcccccc);
     directionalLight.position.set(0, 1200, 1000).normalize();
     scene.add(directionalLight);
-
+    console.log(scene)
     this.loop()
+  }
+
+  //加载模型
+  loader(mtlurl, objurl, f) {
+    var mtlloader = new THREE.MTLLoader()
+    mtlloader.load(mtlurl, function (material) {
+      var objloader = new THREE.OBJLoader()
+      objloader.setMaterials(material)
+      objloader.load(objurl, f)
+    })
+  }
+
+  noteload(data) {
+    var noteobj
+    switch(data.type) {
+      case 1:this.loader(ObjsURL)
+    }
   }
 
   update() {
     // 更新代码
     if (preLoadDone) {
+      //camera.rotation.x += 0.01
+      //camera.rotation.y += 0.01
+      //camera.rotation.z += 0.01
     }
   }
 
@@ -87,7 +128,7 @@ export default class Main {
   loop() {
     this.update()
     this.render()
-    console.log('update')
+    //console.log('update')
     window.requestAnimationFrame(
       this.loop.bind(this),
       canvas
