@@ -11,6 +11,7 @@ require('./libs/weapp-adapter.js')
 
 let ctx = canvas.getContext('webgl', { antialias: true, preserveDrawingBuffer: true })
 //let ctx   = canvas.getContext('2d')
+console.log(canvas)
 let databus = new DataBus()
 let renderer
 let camera
@@ -26,6 +27,11 @@ let note1 = {
     "track": [{ "arc": 90, "delay": 0 }]
   }
 }
+
+let container;
+let mesh;
+let controls;
+let controls1;
 
 /**
  * 游戏主函数
@@ -44,6 +50,7 @@ export default class Main {
     const winWidth = canvas.width
     const winHeight = canvas.height
     const cameraAspect = winWidth / winHeight
+    console.log(renderer)
 
     downside = -120 / cameraAspect * 0.6
     
@@ -111,8 +118,14 @@ export default class Main {
       //camera.rotation.x += 0.01
       //camera.rotation.y += 0.01
       //camera.rotation.z += 0.01
+      //console.log(camera)
+      console.log(camera.position)
+      obj.rotation.z += 0.01;
+      obj.rotation.x += 0.01;
+      obj.rotation.y += 0.01;
     }
   }
+
 
   /**
    * canvas 重绘函数
@@ -120,6 +133,7 @@ export default class Main {
    */
   render() {
     if (preLoadDone) {
+      
       renderer.render(scene, camera)
     }
   }
