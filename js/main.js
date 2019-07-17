@@ -5,17 +5,24 @@ import GameInfo   from './runtime/gameinfo'
 import Music      from './runtime/music'
 import DataBus    from './databus'
 import THREE      from './libs/three_modified'
+//import 'weapp-adapter'
+
 
 require('./libs/weapp-adapter.js')
 
 let ctx = canvas.getContext('webgl', { antialias: true, preserveDrawingBuffer: true })
 //let ctx   = canvas.getContext('2d')
+console.log(canvas)
 let databus = new DataBus()
 let renderer
 let camera
 let preLoadDone = false;
 let scene
-
+let container;
+let mesh;
+let controls;
+let controls1;
+let obj
 /**
  * 游戏主函数
  */
@@ -29,8 +36,10 @@ export default class Main {
       var objloader = new THREE.OBJLoader()
       objloader.setMaterials(material)
       objloader.load('https://haurchefant-g.github.io/objs/loop1.obj', function(object) {
-		object.scale.set(1, 1, 1)
-		object.position.y = 20
+        obj = object
+        console.log(obj)
+		   object.scale.set(1, 1, 1)
+		//object.position.y = 20
         scene.add(object)
         preLoadDone = true
 
@@ -38,21 +47,33 @@ export default class Main {
     })
     //this.restart()
     renderer = new THREE.WebGLRenderer({ context: ctx, canvas: canvas })
-
-    const winWidth = window.innerWidth
-    const winHeight = window.innerHeight
+    console.log(window)
+    const winWidth = canvas.width
+    const winHeight = canvas.height
     const cameraAspect = winWidth / winHeight
+    console.log(renderer)
 
-    renderer.setSize(winWidth, winHeight)
+    //renderer.setSize(winWidth, winHeight)
     renderer.setPixelRatio(window.devicePixelRatio)
 
     console.log("屏幕尺寸: " + winWidth + " x " + winHeight)
 
+    //container = document.querySelector('scene');
 	camera = new THREE.OrthographicCamera(-120, 120, -120 / cameraAspect, 120/cameraAspect,1,1000)
-	//camera = new THREE.PerspectiveCamera(75, cameraAspect, 1, 100000)
+    //const fov = 35; // fov = Field Of View
+    //const aspect = winWidth / winHeight;
+   // const near = 0.1;
+   // const far = 100;
+	//camera = new THREE.PerspectiveCamera(fov,aspect,near,far);
 	console.log(camera.position)
 	camera.position.set(0, 30, 120)
 	camera.lookAt(0,0,0)
+  controls = new THREE.OrbitControls(camera);
+  console.log(camera)
+
+  //缩放
+
+
 
 
     // 添加环境光
@@ -64,14 +85,21 @@ export default class Main {
     directionalLight.position.set(0, 1200, 1000).normalize();
     scene.add(directionalLight);
 
+
     this.loop()
   }
 
   update() {
     // 更新代码
     if (preLoadDone) {
+      //console.log(camera)
+      console.log(camera.position)
+      obj.rotation.z += 0.01;
+      obj.rotation.x += 0.01;
+      obj.rotation.y += 0.01;
     }
   }
+
 
   /**
    * canvas 重绘函数
@@ -79,6 +107,7 @@ export default class Main {
    */
   render() {
     if (preLoadDone) {
+      
       renderer.render(scene, camera)
     }
   }
@@ -87,7 +116,7 @@ export default class Main {
   loop() {
     this.update()
     this.render()
-    console.log('update')
+    //console.log('update')
     window.requestAnimationFrame(
       this.loop.bind(this),
       canvas
