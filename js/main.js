@@ -1,17 +1,17 @@
-import Player     from './player/index'
-import Enemy      from './npc/enemy'
+import Player from './player/index'
+import Enemy from './npc/enemy'
 import BackGround from './runtime/background'
-import GameInfo   from './runtime/gameinfo'
-import Music      from './runtime/music'
-import DataBus    from './databus'
-import THREE      from './libs/three_modified'
-//import 'weapp-adapter'
+import GameInfo from './runtime/gameinfo'
+import Music from './runtime/music'
+import DataBus from './databus'
+import THREE from './libs/three_modified'
+
 
 
 require('./libs/weapp-adapter.js')
 
 let ctx = canvas.getContext('webgl', { antialias: true, preserveDrawingBuffer: true })
-//let ctx   = canvas.getContext('2d')
+
 console.log(canvas)
 let databus = new DataBus()
 let renderer
@@ -21,31 +21,33 @@ let scene
 let container;
 let mesh;
 let controls;
-let controls1;
 let obj
+let timer = null;
+
 /**
  * 游戏主函数
  */
 export default class Main {
   constructor() {
     // 维护当前requestAnimationFrame的id
-    this.aniId    = 0
+    this.aniId = 0
     scene = new THREE.Scene()
     var mtlloader = new THREE.MTLLoader()
-    mtlloader.load('https://haurchefant-g.github.io/objs/loop1.mtl', function(material) {
+    mtlloader.load('https://haurchefant-g.github.io/objs/loop1.mtl', function (material) {
       var objloader = new THREE.OBJLoader()
       objloader.setMaterials(material)
-      objloader.load('https://haurchefant-g.github.io/objs/loop1.obj', function(object) {
+      objloader.load('https://haurchefant-g.github.io/objs/loop1.obj', function (object) {
         obj = object
         console.log(obj)
-		   object.scale.set(1, 1, 1)
-		//object.position.y = 20
+        object.scale.set(1, 1, 1)
+        //object.position.y = 20
         scene.add(object)
         preLoadDone = true
 
       })
     })
     //this.restart()
+  
     renderer = new THREE.WebGLRenderer({ context: ctx, canvas: canvas })
     console.log(window)
     const winWidth = canvas.width
@@ -59,19 +61,18 @@ export default class Main {
     console.log("屏幕尺寸: " + winWidth + " x " + winHeight)
 
     //container = document.querySelector('scene');
-	camera = new THREE.OrthographicCamera(-120, 120, -120 / cameraAspect, 120/cameraAspect,1,1000)
+    camera = new THREE.OrthographicCamera(-120, 120, -120 / cameraAspect, 120 / cameraAspect, 1, 1000)
     //const fov = 35; // fov = Field Of View
     //const aspect = winWidth / winHeight;
-   // const near = 0.1;
-   // const far = 100;
-	//camera = new THREE.PerspectiveCamera(fov,aspect,near,far);
-	console.log(camera.position)
-	camera.position.set(0, 30, 120)
-	camera.lookAt(0,0,0)
-  controls = new THREE.OrbitControls(camera);
-  console.log(camera)
+    // const near = 0.1;
+    // const far = 100;
+    //camera = new THREE.PerspectiveCamera(fov,aspect,near,far);
+    console.log(camera.position)
+    camera.position.set(0, 30, 120)
+    camera.lookAt(0, 0, 0)
+    controls = new THREE.OrbitControls(camera);
+    console.log(camera)
 
-  //缩放
 
 
 
@@ -107,8 +108,9 @@ export default class Main {
    */
   render() {
     if (preLoadDone) {
-      
+
       renderer.render(scene, camera)
+     // isOver();
     }
   }
 
@@ -123,30 +125,51 @@ export default class Main {
     )
   }
 
-  // restart() {
-  //   databus.reset()
+  //计时器
+  start() {
+    if (timer)
+      return;
+    timer = setInterval(render(), 10);//周期性调用
+  }
+  end() {
+    if (timer) {
+      clearInterval(timer);
+      timer1 = null;
+    }
+  }
 
-  //   canvas.removeEventListener(
-  //     'touchstart',
-  //     this.touchHandler
-  //   )
+ // window.cancelAnimationFrame(this.aniId);
 
-  //   this.bg       = new BackGround(ctx)
-  //   this.player   = new Player(ctx)
-  //   this.gameinfo = new GameInfo()
-  //   this.music    = new Music()
+   // this.aniId = window.requestAnimationFrame(
+    //  this.bindLoop,
+    //  canvas
+  // )
 
-  //   this.bindLoop     = this.loop.bind(this)
-  //   this.hasEventBind = false
 
-  //   // 清除上一局的动画
-  //   window.cancelAnimationFrame(this.aniId);
+  //restart() {
+    //databus.reset()
 
-  //   this.aniId = window.requestAnimationFrame(
-  //     this.bindLoop,
-  //     canvas
-  //   )
-  // }
+   // canvas.removeEventListener(
+   //   'touchstart',
+   //   this.touchHandler
+  //  )
+
+  //  this.bg = new BackGround(ctx)
+  //  this.player = new Player(ctx)
+   // this.gameinfo = new GameInfo()
+  //  this.music = new Music()
+
+   // this.bindLoop = this.loop.bind(this)
+   // this.hasEventBind = false
+
+    // 清除上一局的动画
+   // window.cancelAnimationFrame(this.aniId);
+
+   // this.aniId = window.requestAnimationFrame(
+    //  this.bindLoop,
+     // canvas
+   // )
+  //}
 
   // /**
   //  * 随着帧数变化的敌机生成逻辑
@@ -193,90 +216,94 @@ export default class Main {
 
   // // 游戏结束后的触摸事件处理逻辑
   // touchEventHandler(e) {
-  //    e.preventDefault()
+//      e.preventDefault()
 
   //   let x = e.touches[0].clientX
-  //   let y = e.touches[0].clientY
+    // let y = e.touches[0].clientY
 
-  //   let area = this.gameinfo.btnArea
+     //let area = this.gameinfo.btnArea
 
-  //   if (   x >= area.startX
-  //       && x <= area.endX
-  //       && y >= area.startY
-  //       && y <= area.endY  )
-  //     this.restart()
-  // }
+     //if (   x >= area.startX
+       //  && x <= area.endX
+         //&& y >= area.startY
+        // && y <= area.endY  )
+       //this.restart()
+   //}
 
   // /**
   //  * canvas重绘函数
   //  * 每一帧重新绘制所有的需要展示的元素
   //  */
-  // render() {
-  //   ctx.clearRect(0, 0, canvas.width, canvas.height)
+ // render() {
+  // ctx.clearRect(0, 0, canvas.width, canvas.height)
+   
 
-  //   this.bg.render(ctx)
+ // this.bg.render(ctx)
 
-  //   databus.bullets
-  //         .concat(databus.enemys)
-  //         .forEach((item) => {
-  //             item.drawToCanvas(ctx)
-  //           })
+ //   databus.bullets
+  //  .concat(databus.enemys)
+ //  .forEach((item) => {
+  //    item.drawToCanvas(ctx)
+   //  })
 
-  //   this.player.drawToCanvas(ctx)
+  //  this.player.drawToCanvas(ctx)
 
-  //   databus.animations.forEach((ani) => {
-  //     if ( ani.isPlaying ) {
-  //       ani.aniRender(ctx)
-  //     }
-  //   })
-
-  //   this.gameinfo.renderGameScore(ctx, databus.score)
-
-  //   // 游戏结束停止帧循环
-  //   if ( databus.gameOver ) {
-  //     this.gameinfo.renderGameOver(ctx, databus.score)
-
-  //     if ( !this.hasEventBind ) {
-  //       this.hasEventBind = true
-  //       this.touchHandler = this.touchEventHandler.bind(this)
-  //       canvas.addEventListener('touchstart', this.touchHandler)
-  //     }
-  //   }
+ //  databus.animations.forEach((ani) => {
+   //  if ( ani.isPlaying ) {
+   //    ani.aniRender(ctx)
   // }
+  // })
+
+   //  this.gameinfo.renderGameScore(ctx, databus.score)
+
+  // 游戏结束停止帧循环
+ // if(databus.gameOver) {
+    //this.gameinfo.renderGameOver(ctx, databus.score)
+    //     databus.gameOver = true
+
+
+   // if (!this.hasEventBind) {
+    //  this.hasEventBind = true
+    //  this.touchHandler = this.touchEventHandler.bind(this)
+    //  canvas.addEventListener('touchstart', this.touchHandler)
+  //  }
+ // }
+ // }
 
   // // 游戏逻辑更新主函数
-  // update() {
-  //   if ( databus.gameOver )
-  //     return;
+  //update() {
+    //if (databus.gameOver)
+    //  return;
+//  }
 
-  //   this.bg.update()
+    //   this.bg.update()
 
-  //   databus.bullets
-  //          .concat(databus.enemys)
-  //          .forEach((item) => {
-  //             item.update()
-  //           })
+    //   databus.bullets
+    //          .concat(databus.enemys)
+    //          .forEach((item) => {
+    //             item.update()
+    //           })
 
-  //   this.enemyGenerate()
+    //   this.enemyGenerate()
 
-  //   this.collisionDetection()
+    //   this.collisionDetection()
 
-  //   if ( databus.frame % 20 === 0 ) {
-  //     this.player.shoot()
-  //     this.music.playShoot()
-  //   }
-  // }
+    //   if ( databus.frame % 20 === 0 ) {
+    //     this.player.shoot()
+    //     this.music.playShoot()
+    //   }
+    // }
 
-  // // 实现游戏帧循环
-  // loop() {
-  //   databus.frame++
+     // 实现游戏帧循环
+    // loop() {
+    //   databus.frame++
 
-  //   this.update()
-  //   this.render()
+    //   this.update()
+    //   this.render()
 
-  //   this.aniId = window.requestAnimationFrame(
-  //     this.bindLoop,
-  //     canvas
-  //   )
-  // }
-}
+    //   this.aniId = window.requestAnimationFrame(
+    //     this.bindLoop,
+    //     canvas
+    //   )
+    // }
+  }
