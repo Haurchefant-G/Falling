@@ -1385,7 +1385,6 @@ THREE.OBJLoader = ( function () {
 
 	return OBJLoader;
 
-
   /**
    * @author alteredq / http://alteredqualia.com/
    * @author arose / http://github.com/arose
@@ -2469,6 +2468,17 @@ Object.defineProperties( THREE.OrbitControls.prototype, {
 
 } );
 
+
+
+//加载模型
+THREE.loader = function loader(mtlurl, objurl, f) {
+  var mtlloader = new THREE.MTLLoader()
+  mtlloader.load(mtlurl, function (material) {
+    var objloader = new THREE.OBJLoader()
+    objloader.setMaterials(material)
+    objloader.load(objurl, f)
+  })
+}
 
 
 export default THREE

@@ -2,7 +2,7 @@ const screenWidth  = window.innerWidth
 const screenHeight = window.innerHeight
 
 let atlas = new Image()
-atlas.src = 'images/Common.png'
+atlas.src = ''
 
 export default class GameInfo {
   renderGameScore(ctx, score) {

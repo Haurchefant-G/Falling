@@ -6,6 +6,7 @@ import Music      from './runtime/music'
 import DataBus    from './databus'
 import THREE      from './libs/three_modified'
 import ObjsURL    from '../objs/url'
+import NOTE       from './note/note'
 
 require('./libs/weapp-adapter.js')
 
@@ -18,20 +19,36 @@ let camera
 let preLoadDone = false
 let scene
 let obj
-let downside
+
+let fallstartY     //打击音符开始下落的高度y
+let loopY       //判定环的y坐标
+let startRadius //打击音符开始下落相对y轴的距离
+let endRadius   //打击音符结束下落相对y轴的距离
 
 let note1 = {
   "time": 100,
   "data": {
     "type": 1,
-    "track": [{ "arc": 90, "delay": 0 }]
+    "track": [{ "degree": 240, "delay": 0 }]
   }
 }
 
+
+  
+
+let clock
 let container;
 let mesh;
 let controls;
 let controls1;
+let raycaster
+
+let musicalnote1
+
+
+let winWidth
+let winHeight
+let cameraAspect
 
 /**
  * 游戏主函数
@@ -42,46 +59,35 @@ export default class Main {
     this.aniId    = 0
     scene = new THREE.Scene()
 
-    
-    preLoadDone = true
-    //this.restart()
     renderer = new THREE.WebGLRenderer({ context: ctx, canvas: canvas, alpha:true })
 
-    const winWidth = canvas.width
-    const winHeight = canvas.height
-    const cameraAspect = winWidth / winHeight
+    winWidth = canvas.width
+    console.log(canvas)
+    console.log(winWidth)
+    console.log(canvas.width)
+    winHeight = canvas.height
+    cameraAspect = winWidth / winHeight
     console.log(renderer)
 
-    downside = -120 / cameraAspect * 0.6
+    loopY = Math.round(-120 / cameraAspect * 0.6)
+    fallstartY = Math.round(120 / cameraAspect * 1)
+    startRadius = 200
+    endRadius = 100
     
     //renderer.setSize(winWidth, winHeight)
     renderer.setPixelRatio(window.devicePixelRatio)
 
     console.log("屏幕尺寸: " + winWidth + " x " + winHeight)
 
-    this.loader('https://haurchefant-g.github.io/objs/loop1.mtl', 'https://haurchefant-g.github.io/objs/loop1.obj', function (object) {
-      object.scale.set(1, 1, 1)
-      object.position.y = downside
-      console.log(object)
-      scene.add(object)
-      preLoadDone = true
-    })
-    this.loader('https://haurchefant-g.github.io/objs/musicalnote2.mtl', 'https://haurchefant-g.github.io/objs/musicalnote2.obj', function (object) {
-      object.scale.set(1, 1, 1)
-      object.position.y = 0
-      scene.add(object)
-      preLoadDone = true
-    })
-
+    this.load()
 	  camera = new THREE.OrthographicCamera(120, -120, 120 / cameraAspect, -120 / cameraAspect,1,100000)
 	  //camera = new THREE.PerspectiveCamera(75, cameraAspect, 1, 100000)
 	  console.log(camera.position)
-    camera.position.set(0, 120 / cameraAspect * 0.3, 100)
+    camera.position.set(0, 120 / cameraAspect * 0.3, 300)
+    controls = new THREE.OrbitControls(camera)
+    controls.enableRotate = false
     camera.lookAt(0, 0, 0)
 
-    var filesystem = wx.getFileSystemManager()
-    console.log(filesystem)
-    console.log(filesystem.getSavedFileList())
 
     // 添加环境光
     let ambientLight = new THREE.AmbientLight(0x999999)
@@ -92,37 +98,116 @@ export default class Main {
     directionalLight.position.set(0, 1200, 1000).normalize();
     scene.add(directionalLight);
     console.log(scene)
+
+    //计时器
+    clock = new THREE.Clock()
+    wx.setPreferredFramesPerSecond(60)
+
+    //点击获取物体
+    raycaster = new THREE.Raycaster()
+    console.log(raycaster)
+    this.initRaycaster()
+    this.restart()
+  }
+
+  restart() {
+    databus.reset()
+    // 清除上一局的动画
+    window.cancelAnimationFrame(this.aniId)
     this.loop()
   }
 
-  //加载模型
-  loader(mtlurl, objurl, f) {
-    var mtlloader = new THREE.MTLLoader()
-    mtlloader.load(mtlurl, function (material) {
-      var objloader = new THREE.OBJLoader()
-      objloader.setMaterials(material)
-      objloader.load(objurl, f)
+  initRaycaster() {
+    canvas.addEventListener('touchstart', (event) => {
+      var pos = new THREE.Vector2();
+      var intersects = []
+      event.touches.forEach((touch) => {
+        pos.x = (touch.clientX / winWidth) * 2 - 1;
+        pos.y = - (touch.clientY / winHeight) * 2 + 1;
+        raycaster.setFromCamera(pos, camera)
+        intersects = intersects.concat(raycaster.intersectObjects(databus.notes).map(e => e.object));
+      })
+      //命中物体去重
+      let result = []
+      let obj = {}
+      for (let i of intersects) {
+          if (!obj[i]) {
+              result.push(i)
+              obj[i] = 1
+          }
+        }
+      databus.intersectnotes = result
     })
   }
 
-  noteload(data) {
+  load() {
+    var noteAdd = this.noteadd.bind(this)
+    THREE.loader('https://haurchefant-g.github.io/objs/loop1.mtl', 'https://haurchefant-g.github.io/objs/loop1.obj', function (object) {
+      object.scale.set(1.25, 1.25, 1.25)
+      object.position.y = loopY
+      console.log(object)
+      scene.add(object)
+      THREE.loader('https://haurchefant-g.github.io/objs/musicalnote2.mtl', 'https://haurchefant-g.github.io/objs/musicalnote2.obj', function (object2) {
+        musicalnote1 = object2.children[0]
+        console.log(musicalnote1)
+        //noteAdd(note1.data)
+        //window.setInterval(noteAdd, 5000, note1.data)
+        noteAdd(note1.data)
+        preLoadDone = true
+      })
+    })
+    // this.loader('https://haurchefant-g.github.io/objs/musicalnote2.mtl', 'https://haurchefant-g.github.io/objs/musicalnote2.obj', function (object) {
+    //   musicalnote1 = object
+    //   console.log(musicalnote1)
+    // })
+  }
+  //加载模型
+  // loader(mtlurl, objurl, f) {
+  //   var mtlloader = new THREE.MTLLoader()
+  //   mtlloader.load(mtlurl, function (material) {
+  //     var objloader = new THREE.OBJLoader()
+  //     objloader.setMaterials(material)
+  //     objloader.load(objurl, f)
+  //   })
+  // }
+
+
+  noteadd(data) {
     var noteobj
+    var arc = Math.PI / 180 * data.track[0].degree
+    //console.log(arc)
+    var fallstartX = Math.cos(arc) * startRadius
+    var fallstartZ = Math.sin(arc) * startRadius
+    //console.log(fallstartX, fallstartY, fallstartZ)
     switch(data.type) {
-      case 1:this.loader(ObjsURL)
+      case 1: noteobj = musicalnote1.clone()
+      noteobj.position.set(fallstartX, fallstartY, fallstartZ)
+      //console.log(noteobj)
+      noteobj.update = NOTE.clicknotetUpdater(arc, fallstartY, fallstartY - loopY, startRadius, endRadius).bind(noteobj)
+      //console.log(noteobj.position)
+      databus.notes.push(noteobj)
+      break
     }
+    scene.add(noteobj)
   }
 
   update() {
     // 更新代码
     if (preLoadDone) {
+      const delta = clock.getDelta()
+      //console.log(delta)
       //camera.rotation.x += 0.01
       //camera.rotation.y += 0.01
       //camera.rotation.z += 0.01
       //console.log(camera)
-      console.log(camera.position)
-      obj.rotation.z += 0.01;
-      obj.rotation.x += 0.01;
-      obj.rotation.y += 0.01;
+      //console.log(camera.position)
+      databus.notes.forEach((note) => {
+        //console.log(note)
+        note.update(delta)
+        //console.log(note.position)
+      })
+    } else {
+      //console.log('FFF')
     }
   }
 
@@ -143,7 +228,7 @@ export default class Main {
     this.update()
     this.render()
     //console.log('update')
-    window.requestAnimationFrame(
+    this.aniId = window.requestAnimationFrame(
       this.loop.bind(this),
       canvas
     )
