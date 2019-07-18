@@ -117,17 +117,20 @@ export default class Main {
     this.loop()
   }
 
+  //点击命中物体事件添加
   initRaycaster() {
     canvas.addEventListener('touchstart', (event) => {
       var pos = new THREE.Vector2();
       var intersects = []
+      //寻找命中的note
       event.touches.forEach((touch) => {
         pos.x = (touch.clientX / winWidth) * 2 - 1;
         pos.y = - (touch.clientY / winHeight) * 2 + 1;
         raycaster.setFromCamera(pos, camera)
+        //传入的databus.notes是要检测的是否点击到的物体的数组（必须为Mesh类的数组，不能为Group类的数组），要检测其他的物体，修改databus.notes即可
         intersects = intersects.concat(raycaster.intersectObjects(databus.notes).map(e => e.object));
       })
-      //命中物体去重
+      //命中note去重
       let result = []
       let obj = {}
       for (let i of intersects) {
