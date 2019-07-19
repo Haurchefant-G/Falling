@@ -20,10 +20,11 @@ let preLoadDone = false
 let scene
 let obj
 
+
 let fallstartY     //打击音符开始下落的高度y
 let loopY       //判定环的y坐标
 let startRadius //打击音符开始下落相对y轴的距离
-let endRadius   //打击音符结束下落相对y轴的距离
+let endRadius     //打击音符结束下落相对y轴的距离
 
 let note1 = {
   "time": 100,
@@ -42,6 +43,7 @@ let mesh;
 let controls;
 let controls1;
 let raycaster
+
 
 let musicalnote1
 
@@ -74,19 +76,184 @@ export default class Main {
     startRadius = 200
     endRadius = 100
     
+    
     //renderer.setSize(winWidth, winHeight)
     renderer.setPixelRatio(window.devicePixelRatio)
 
     console.log("屏幕尺寸: " + winWidth + " x " + winHeight)
 
-    this.load()
+   // this.load()
 	  camera = new THREE.OrthographicCamera(120, -120, 120 / cameraAspect, -120 / cameraAspect,1,100000)
 	  //camera = new THREE.PerspectiveCamera(75, cameraAspect, 1, 100000)
 	  console.log(camera.position)
     camera.position.set(0, 120 / cameraAspect * 0.3, 300)
     controls = new THREE.OrbitControls(camera)
-    controls.enableRotate = false
+    //controls.enableRotate = false
     camera.lookAt(0, 0, 0)
+    //字体加载
+    let loader = new THREE.FontLoader();
+    loader.load('https://haurchefant-g.github.io/fonts/helvetiker_regular.typeface.json', function (font) {
+      let fontCfg = {
+        font: font,
+        size: 20,
+        height: 5,
+        curveSegments: 12,
+        bevelEnabled: false,
+        bevelThickness: 10,
+        bevelSize: 3,
+        bevelSegments: 12
+      };
+      //按钮
+      //添加开始按钮
+      var fontGeometry = new THREE.TextBufferGeometry('Start', fontCfg);
+      fontGeometry.computeBoundingBox();//绑定盒子模型
+      fontGeometry.center();
+      console.log(fontGeometry)
+
+      // 添加开始按钮文字的素材
+      var color= new THREE.Color(0x006699);
+      var fontMaterial = new THREE.MeshBasicMaterial({
+        flatShading: THREE.FlatShading,
+        transparent: true,
+        opacity: 0.6,
+        color:color,
+        side:THREE.DoubleSide
+      });
+      databus.starttext = new THREE.Mesh(fontGeometry, fontMaterial);
+      //databus.starttext.up.set(0,0,0)
+      console.log(databus.starttext)
+
+      // 计算出整个模型宽度的一半, 不然模型就会绕着x = 0,中心旋转
+      databus.starttext.rotation.y += Math.PI
+      //font.lookAt(camera.position)
+      scene.add(databus.starttext);
+      preLoadDone = true
+    })
+    //help
+    //字体加载
+    let loader_help = new THREE.FontLoader();
+    loader_help.load('https://haurchefant-g.github.io/fonts/helvetiker_regular.typeface.json', function (font) {
+      let fontCfg = {
+        font: font,
+        size: 20,
+        height: 5,
+        curveSegments: 12,
+        bevelEnabled: false,
+        bevelThickness: 10,
+        bevelSize: 3,
+        bevelSegments: 12
+      };
+      //按钮
+      //添加帮助按钮
+      var fontGeometry_help = new THREE.TextBufferGeometry('Help', fontCfg);
+      fontGeometry_help.computeBoundingBox();//绑定盒子模型
+      fontGeometry_help.center();
+      console.log(fontGeometry_help)
+
+      // 添加帮助按钮文字的素材
+      var color= new THREE.Color(0x006699);
+      var fontMaterial = new THREE.MeshBasicMaterial({
+        flatShading: THREE.FlatShading,
+        transparent: true,
+        opacity: 0.6,
+        color:color,
+        side:THREE.DoubleSide
+      });
+      databus.helptext = new THREE.Mesh(fontGeometry_help, fontMaterial);
+      databus.helptext.position.set(0,-30,0)
+      //databus.starttext.up.set(0,0,0)
+      console.log(databus.helptext)
+
+      // 计算出整个模型宽度的一半, 不然模型就会绕着x = 0,中心旋转
+      databus.helptext.rotation.y += Math.PI
+      //font.lookAt(camera.position)
+      scene.add(databus.helptext);
+      preLoadDone = true
+    })
+
+
+    //stop
+    //字体加载
+    let loader_stop = new THREE.FontLoader();
+    loader_stop.load('https://haurchefant-g.github.io/fonts/helvetiker_regular.typeface.json', function (font) {
+      let fontCfg = {
+        font: font,
+        size: 40,
+        height: 5,
+        curveSegments: 12,
+        bevelEnabled: false,
+        bevelThickness: 10,
+        bevelSize: 3,
+        bevelSegments: 12
+      };
+      //按钮
+      //添加帮助按钮
+      var fontGeometry_stop = new THREE.TextBufferGeometry('stop', fontCfg);
+      fontGeometry_stop.computeBoundingBox();//绑定盒子模型
+      fontGeometry_stop.center();
+      console.log(fontGeometry_stop)
+
+      // 添加帮助按钮文字的素材
+      var color= new THREE.Color(0x006699);
+      var fontMaterial = new THREE.MeshBasicMaterial({
+        flatShading: THREE.FlatShading,
+        transparent: true,
+        opacity: 0.6,
+        color:color,
+        side:THREE.DoubleSide
+      });
+      databus.stoptext = new THREE.Mesh(fontGeometry_stop, fontMaterial);
+      databus.stoptext.position.set(0,-30,0)
+      //databus.starttext.up.set(0,0,0)
+      console.log(databus.stoptext)
+
+      // 计算出整个模型宽度的一半, 不然模型就会绕着x = 0,中心旋转
+      databus.stoptext.rotation.y += Math.PI
+      //font.lookAt(camera.position)
+      preLoadDone = true
+    })
+
+
+     //back
+    //字体加载
+    let loader_back = new THREE.FontLoader();
+    loader_back.load('https://haurchefant-g.github.io/fonts/helvetiker_regular.typeface.json', function (font) {
+      let fontCfg = {
+        font: font,
+        size: 20,
+        height: 5,
+        curveSegments: 12,
+        bevelEnabled: false,
+        bevelThickness: 10,
+        bevelSize: 3,
+        bevelSegments: 12
+      };
+      //按钮
+      //添加帮助按钮
+      var fontGeometry_back = new THREE.TextBufferGeometry('Back', fontCfg);
+      fontGeometry_back.computeBoundingBox();//绑定盒子模型
+      fontGeometry_back.center();
+      console.log(fontGeometry_back)
+
+      // 添加帮助按钮文字的素材
+      var color= new THREE.Color(0x006699);
+      var fontMaterial = new THREE.MeshBasicMaterial({
+        flatShading: THREE.FlatShading,
+        transparent: true,
+        opacity: 0.6,
+        color:color,
+        side:THREE.DoubleSide
+      });
+      databus.backtext = new THREE.Mesh(fontGeometry_back, fontMaterial);
+      databus.backtext.position.set(0,-30,0)
+      //databus.starttext.up.set(0,0,0)
+      console.log(databus.backtext)
+
+      // 计算出整个模型宽度的一半, 不然模型就会绕着x = 0,中心旋转
+      databus.backtext.rotation.y += Math.PI
+      //font.lookAt(camera.position)
+      preLoadDone = true
+    })
 
 
     // 添加环境光
@@ -127,8 +294,12 @@ export default class Main {
         pos.x = (touch.clientX / winWidth) * 2 - 1;
         pos.y = - (touch.clientY / winHeight) * 2 + 1;
         raycaster.setFromCamera(pos, camera)
+        console.log(databus.notes)
         //传入的databus.notes是要检测的是否点击到的物体的数组（必须为Mesh类的数组，不能为Group类的数组），要检测其他的物体，修改databus.notes即可
-        intersects = intersects.concat(raycaster.intersectObjects(databus.notes).map(e => e.object));
+        intersects = intersects.concat(raycaster.intersectObjects([databus.starttext]).map(e => e.object));
+        intersects = intersects.concat(raycaster.intersectObjects([databus.helptext]).map(e => e.object));
+        intersects = intersects.concat(raycaster.intersectObjects([databus.stoptext]).map(e => e.object));
+        intersects = intersects.concat(raycaster.intersectObjects([databus.backtext]).map(e => e.object));
       })
       //命中note去重
       let result = []
@@ -139,7 +310,41 @@ export default class Main {
               obj[i] = 1
           }
         }
-      databus.intersectnotes = result
+      console.log(result)
+      //start点击检测
+      result.forEach(child => {
+        if(child === databus.starttext) {
+          scene.remove(databus.starttext)
+          scene.remove(databus.helptext)
+          this.load()
+        }
+      })
+      //help点击检测
+      result.forEach(child => {
+        if(child === databus.helptext) {
+          scene.remove(child)
+          scene.remove(databus.starttext)
+          scene.add(databus.backtext);
+          //this.load()
+        }
+      })
+      //stop点击检测
+      result.forEach(child => {
+        if(child === databus.stoptext) {
+          scene.remove(child)
+          preLoadDone=false;
+          //this.load()
+        }
+      })
+      //back点击检测
+      result.forEach(child => {
+        if(child === databus.backtext) {
+          scene.remove(child)
+          scene.add(databus.starttext)
+          scene.add(databus.helptext)
+          //this.load()
+        }
+      })
     })
   }
 
@@ -156,7 +361,8 @@ export default class Main {
         //noteAdd(note1.data)
         //window.setInterval(noteAdd, 5000, note1.data)
         noteAdd(note1.data)
-        preLoadDone = true
+        scene.add(databus.stoptext);
+        //preLoadDone +=1
       })
     })
     // this.loader('https://haurchefant-g.github.io/objs/musicalnote2.mtl', 'https://haurchefant-g.github.io/objs/musicalnote2.obj', function (object) {
@@ -198,6 +404,8 @@ export default class Main {
     // 更新代码
     if (preLoadDone) {
       const delta = clock.getDelta()
+      //databus.starttext.lookAt(camera.position)
+      //console.log(databus.starttext.up)
       //console.log(delta)
       //camera.rotation.x += 0.01
       //camera.rotation.y += 0.01

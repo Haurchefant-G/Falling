@@ -20,6 +20,7 @@ export default class DataBus {
   reset() {
     this.frame      = 0
     this.score      = 0
+    this.starttext = undefined
     this.notes      = []
     this.intersectnotes = []
     this.bullets    = []
