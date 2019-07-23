@@ -12,7 +12,7 @@
 		"checkInvalidKey": true
 	},
 	"compileType": "game",
-	"libVersion": "2.7.5",
+	"libVersion": "2.7.7",
 	"appid": "wx27eed826221f9b1a",
 	"projectname": "GameTest",
 	"simulatorType": "wechat",

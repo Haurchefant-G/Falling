@@ -17,8 +17,10 @@ import Clock       from './base/clock'
 
 require('./libs/weapp-adapter.js')
 
+
 let ctx = canvas.getContext('webgl', { antialias: true, preserveDrawingBuffer: true })
-//let ctx   = canvas.getContext('2d')
+
+
 console.log(canvas)
 
 let FileSystemManager = wx.getFileSystemManager()
@@ -52,6 +54,7 @@ let mesh;
 let controls;
 let controls1;
 let raycaster
+let obj_canvas
 
 
 let musicalnote1
@@ -75,6 +78,7 @@ export default class Main {
   constructor() {
     // 维护当前requestAnimationFrame的id
     this.aniId    = 0
+    this.gameinfo = new GameInfo()
     scene = new THREE.Scene()
     databus.scene = scene
 
@@ -121,6 +125,60 @@ export default class Main {
     scene.add(databus.camera)
     //console.log(databus.camera)
     this.load()
+   // this.load()
+
+/*     this.scene = new THREE.Scene()
+    this.camera =new THREE.OrthographicCamera(window.innerWidth/-2,window.innerHeight/2, window.innerHeight / -2, 0, 10000) */
+    this.open = wx.getOpenDataContext()
+    console.log(this.open)
+    this.sharedCanvas = this.open.canvas
+    console.log(this.sharedCanvas)
+    var rankctx = this.sharedCanvas.getContext('2d')
+    console.log(rankctx)
+    rankctx.fillStyle = "#0000ff";
+    rankctx.fillRect(200, 200, 850, 800);
+    const {pixelRatio, windowHeight, windowWidth} = wx.getSystemInfoSync()
+    //一定要在主域中设定宽高
+    this.sharedCanvas.width = 1000 ; 
+    this.sharedCanvas.height = 1000;
+    //把开放域中的canvas弄到材质里，以后可以用mesh渲染出来
+    this.rankingTexture = new THREE.CanvasTexture(this.sharedCanvas)
+    this.rankingTexture.minFilter = this.rankingTexture.magFilter = THREE.LinearFilter
+    this.rankingTexture.needsUpdate = true
+    console.log(window.innerWidth)
+    let geometry = new THREE.PlaneGeometry(1000, 1000)
+    let material = new THREE.MeshBasicMaterial({ map: this.rankingTexture, transparent: false })
+    this.ranking = new THREE.Mesh(geometry, material)
+    console.log(this.ranking)
+
+    this.ranking.position.set(0, 0, 0)
+    scene.add(this.ranking)
+    console.log(this.ranking)
+
+
+     this.rankingTexture = new THREE.CanvasTexture(this.sharedCanvas)
+    this.rankingTexture.minFilter = this.rankingTexture.magFilter = THREE.LinearFilter
+    this.rankingTexture.needsUpdate = true
+    console.log(window.innerWidth)
+    let geometry = new THREE.PlaneGeometry(1000, 1000)
+    let material = new THREE.MeshBasicMaterial({ map: this.rankingTexture, transparent: false })
+    this.ranking = new THREE.Mesh(geometry, material)
+    console.log(this.ranking)
+
+    this.ranking.position.set(0, 0, 0)
+    scene.add(this.ranking)
+    console.log(this.ranking)
+
+    var img = new Image(100, 100)
+    img.src = 'images/bg.png'
+    img.onload = this.drawImageActualSize(ranking);
+    ctx.drawImage(this.img, 10, 10);
+
+
+
+
+
+
     //字体加载
     let loader = new THREE.FontLoader();
     loader.load('https://haurchefant-g.github.io/fonts/helvetiker_regular.typeface.json', function (font) {
@@ -220,6 +278,12 @@ export default class Main {
     })
     //help
     //字体加载
+
+   //let message = "Three.js\nStroke text.";
+    //let shapes = font.generateShapes(message, 100);
+    //let geometry = new THREE.ShapeBufferGeometry(shapes);
+
+
 
 
     // 添加环境光
@@ -356,6 +420,8 @@ export default class Main {
       //back点击检测
       result.forEach(child => {
         if(child === databus.backtext) {
+          scene.add(camera)
+          scene.remove(databus.backtext)
           scene.remove(child)
           scene.add(databus.starttext)
           scene.add(databus.helptext)
@@ -476,6 +542,7 @@ export default class Main {
   update() {
     // 更新代码
     if (preLoadDone) {
+      console.log(this.rankinge)
       const delta = clock.getDelta()
       //databus.starttext.lookAt(camera.position)
       //console.log(databus.starttext.up)
@@ -581,39 +648,21 @@ export default class Main {
   // /**
   //  * canvas重绘函数
   //  * 每一帧重新绘制所有的需要展示的元素
-  //  */
-  // render() {
-  //   ctx.clearRect(0, 0, canvas.width, canvas.height)
+    
+   //render() {
+     //this.gameinfo.renderGameScore(ctxmenu, databus.score)
 
-  //   this.bg.render(ctx)
+     // 游戏结束停止帧循环
+    // if ( databus.gameOver ) {
+    //   this.gameinfo.renderGameOver(ctxmenu, databus.score)
 
-  //   databus.bullets
-  //         .concat(databus.enemys)
-  //         .forEach((item) => {
-  //             item.drawToCanvas(ctx)
-  //           })
-
-  //   this.player.drawToCanvas(ctx)
-
-  //   databus.animations.forEach((ani) => {
-  //     if ( ani.isPlaying ) {
-  //       ani.aniRender(ctx)
-  //     }
-  //   })
-
-  //   this.gameinfo.renderGameScore(ctx, databus.score)
-
-  //   // 游戏结束停止帧循环
-  //   if ( databus.gameOver ) {
-  //     this.gameinfo.renderGameOver(ctx, databus.score)
-
-  //     if ( !this.hasEventBind ) {
-  //       this.hasEventBind = true
-  //       this.touchHandler = this.touchEventHandler.bind(this)
-  //       canvas.addEventListener('touchstart', this.touchHandler)
-  //     }
-  //   }
-  // }
+    //   if ( !this.hasEventBind ) {
+      //   this.hasEventBind = true
+      //   this.touchHandler = this.touchEventHandler.bind(this)
+      //   canvas.addEventListener('touchstart', this.touchHandler)
+     //  }
+   //  }
+ //  }
 
   // // 游戏逻辑更新主函数
   // update() {
