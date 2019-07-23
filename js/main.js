@@ -1,7 +1,7 @@
 //import Player     from './player/index'
 //import Enemy      from './npc/enemy'
 //import BackGround from './runtime/background'
-//import GameInfo   from './runtime/gameinfo'
+import GameInfo   from './runtime/gameinfo'
 import Music      from './runtime/music'
 import databus    from './databus'
 import THREE      from './libs/three_modified'
@@ -129,162 +129,6 @@ export default class Main {
 
 /*     this.scene = new THREE.Scene()
     this.camera =new THREE.OrthographicCamera(window.innerWidth/-2,window.innerHeight/2, window.innerHeight / -2, 0, 10000) */
-    this.open = wx.getOpenDataContext()
-    console.log(this.open)
-    this.sharedCanvas = this.open.canvas
-    console.log(this.sharedCanvas)
-    var rankctx = this.sharedCanvas.getContext('2d')
-    console.log(rankctx)
-    rankctx.fillStyle = "#0000ff";
-    rankctx.fillRect(200, 200, 850, 800);
-    const {pixelRatio, windowHeight, windowWidth} = wx.getSystemInfoSync()
-    //一定要在主域中设定宽高
-    this.sharedCanvas.width = 1000 ; 
-    this.sharedCanvas.height = 1000;
-    //把开放域中的canvas弄到材质里，以后可以用mesh渲染出来
-    this.rankingTexture = new THREE.CanvasTexture(this.sharedCanvas)
-    this.rankingTexture.minFilter = this.rankingTexture.magFilter = THREE.LinearFilter
-    this.rankingTexture.needsUpdate = true
-    console.log(window.innerWidth)
-    let geometry = new THREE.PlaneGeometry(1000, 1000)
-    let material = new THREE.MeshBasicMaterial({ map: this.rankingTexture, transparent: false })
-    this.ranking = new THREE.Mesh(geometry, material)
-    console.log(this.ranking)
-
-    this.ranking.position.set(0, 0, 0)
-    scene.add(this.ranking)
-    console.log(this.ranking)
-
-
-     this.rankingTexture = new THREE.CanvasTexture(this.sharedCanvas)
-    this.rankingTexture.minFilter = this.rankingTexture.magFilter = THREE.LinearFilter
-    this.rankingTexture.needsUpdate = true
-    console.log(window.innerWidth)
-    let geometry = new THREE.PlaneGeometry(1000, 1000)
-    let material = new THREE.MeshBasicMaterial({ map: this.rankingTexture, transparent: false })
-    this.ranking = new THREE.Mesh(geometry, material)
-    console.log(this.ranking)
-
-    this.ranking.position.set(0, 0, 0)
-    scene.add(this.ranking)
-    console.log(this.ranking)
-
-    var img = new Image(100, 100)
-    img.src = 'images/bg.png'
-    img.onload = this.drawImageActualSize(ranking);
-    ctx.drawImage(this.img, 10, 10);
-
-
-
-
-
-
-    //字体加载
-    let loader = new THREE.FontLoader();
-    loader.load('https://haurchefant-g.github.io/fonts/helvetiker_regular.typeface.json', function (font) {
-      let fontCfg = {
-        font: font,
-        size: 20,
-        height: 5,
-        curveSegments: 12,
-        bevelEnabled: false,
-        bevelThickness: 10,
-        bevelSize: 3,
-        bevelSegments: 12
-      };
-
-      // 添加开始按钮文字的素材
-      var color= new THREE.Color(0x006699);
-      var fontMaterial = new THREE.MeshBasicMaterial({
-        flatShading: THREE.FlatShading,
-        transparent: true,
-        opacity: 0.6,
-        color:color,
-        side:THREE.DoubleSide
-      });
-
-      //按钮
-      //添加开始按钮
-      var fontGeometry = new THREE.TextBufferGeometry('Start', fontCfg);
-      fontGeometry.computeBoundingBox();//绑定盒子模型
-      fontGeometry.center();
-      console.log(fontGeometry)
-      databus.starttext = new THREE.Mesh(fontGeometry, fontMaterial);
-      //databus.starttext.up.set(0,0,0)
-      //console.log(databus.starttext)
-      // 计算出整个模型宽度的一半, 不然模型就会绕着x = 0,中心旋转
-      databus.starttext.rotation.y += Math.PI
-      scene.add(databus.starttext);
-
-
-      var fontGeometry_help = new THREE.TextBufferGeometry('Help', fontCfg);
-      fontGeometry_help.computeBoundingBox();//绑定盒子模型
-      fontGeometry_help.center();
-      console.log(fontGeometry_help)
-      databus.helptext = new THREE.Mesh(fontGeometry_help, fontMaterial);
-      databus.helptext.position.set(0,-30,0)
-      databus.helptext.rotation.y += Math.PI
-      //font.lookAt(camera.position)
-      scene.add(databus.helptext);
-
-
-      var fontGeometry_back = new THREE.TextBufferGeometry('Back', fontCfg);
-      fontGeometry_back.computeBoundingBox();//绑定盒子模型
-      fontGeometry_back.center();
-      console.log(fontGeometry_back)
-      databus.backtext = new THREE.Mesh(fontGeometry_back, fontMaterial);
-      databus.backtext.position.set(0,-30,0)
-      //databus.starttext.up.set(0,0,0)
-      console.log(databus.backtext)
-      // 计算出整个模型宽度的一半, 不然模型就会绕着x = 0,中心旋转
-      databus.backtext.rotation.y += Math.PI
-      //scene.add(databus.back);
-
-      let fontCfg2 = {
-        font: font,
-        size: 40,
-        height: 5,
-        curveSegments: 12,
-        bevelEnabled: false,
-        bevelThickness: 10,
-        bevelSize: 3,
-        bevelSegments: 12
-      };
-
-      var fontGeometry_stop = new THREE.TextBufferGeometry('stop', fontCfg2);
-      fontGeometry_stop.computeBoundingBox();//绑定盒子模型
-      fontGeometry_stop.center();
-      console.log(fontGeometry_stop)
-
-      // 添加帮助按钮文字的素材
-      var color= new THREE.Color(0x006699);
-      var fontMaterial = new THREE.MeshBasicMaterial({
-        flatShading: THREE.FlatShading,
-        transparent: true,
-        opacity: 0.6,
-        color:color,
-        side:THREE.DoubleSide
-      });
-      databus.stoptext = new THREE.Mesh(fontGeometry_stop, fontMaterial);
-      databus.stoptext.position.set(0,-30,0)
-      //databus.starttext.up.set(0,0,0)
-      console.log(databus.stoptext)
-
-      // 计算出整个模型宽度的一半, 不然模型就会绕着x = 0,中心旋转
-      databus.stoptext.rotation.y += Math.PI
-      //scene.add(databus.stoptext);
-      
-      preLoadDone = true
-    })
-    //help
-    //字体加载
-
-   //let message = "Three.js\nStroke text.";
-    //let shapes = font.generateShapes(message, 100);
-    //let geometry = new THREE.ShapeBufferGeometry(shapes);
-
-
-
 
     // 添加环境光
     let ambientLight = new THREE.AmbientLight(0x999999)
@@ -323,6 +167,139 @@ export default class Main {
     this.restart()
   }
 
+  loadButton() {
+    //字体加载
+    let loader = new THREE.FontLoader();
+    loader.load('https://haurchefant-g.github.io/fonts/helvetiker_regular.typeface.json', function (font) {
+      let fontCfg = {
+        font: font,
+        size: 20,
+        height: 5,
+        curveSegments: 12,
+        bevelEnabled: false,
+        bevelThickness: 10,
+        bevelSize: 3,
+        bevelSegments: 12
+      };
+
+      // 添加开始按钮文字的素材
+      var color = new THREE.Color(0x006699);
+      var fontMaterial = new THREE.MeshBasicMaterial({
+        flatShading: THREE.FlatShading,
+        transparent: true,
+        opacity: 0.6,
+        color: color,
+        side: THREE.DoubleSide
+      });
+
+      //按钮
+      //添加开始按钮
+      var fontGeometry = new THREE.TextBufferGeometry('Start', fontCfg);
+      fontGeometry.computeBoundingBox();//绑定盒子模型
+      fontGeometry.center();
+      console.log(fontGeometry)
+      databus.starttext = new THREE.Mesh(fontGeometry, fontMaterial);
+      //databus.starttext.up.set(0,0,0)
+      //console.log(databus.starttext)
+      // 计算出整个模型宽度的一半, 不然模型就会绕着x = 0,中心旋转
+      //databus.starttext.rotation.y += Math.PI
+      scene.add(databus.starttext);
+
+
+      var fontGeometry_help = new THREE.TextBufferGeometry('Help', fontCfg);
+      fontGeometry_help.computeBoundingBox();//绑定盒子模型
+      fontGeometry_help.center();
+      console.log(fontGeometry_help)
+      databus.helptext = new THREE.Mesh(fontGeometry_help, fontMaterial);
+      databus.helptext.position.set(0, -30, 0)
+      //databus.helptext.rotation.y += Math.PI
+      //font.lookAt(camera.position)
+      scene.add(databus.helptext);
+
+
+      var fontGeometry_back = new THREE.TextBufferGeometry('Back', fontCfg);
+      fontGeometry_back.computeBoundingBox();//绑定盒子模型
+      fontGeometry_back.center();
+      console.log(fontGeometry_back)
+      databus.backtext = new THREE.Mesh(fontGeometry_back, fontMaterial);
+      databus.backtext.position.set(0, -30, 0)
+      //databus.starttext.up.set(0,0,0)
+      console.log(databus.backtext)
+      // 计算出整个模型宽度的一半, 不然模型就会绕着x = 0,中心旋转
+      //databus.backtext.rotation.y += Math.PI
+      //scene.add(databus.back);
+
+      let fontCfg2 = {
+        font: font,
+        size: 40,
+        height: 5,
+        curveSegments: 12,
+        bevelEnabled: false,
+        bevelThickness: 10,
+        bevelSize: 3,
+        bevelSegments: 12
+      };
+
+      var fontGeometry_stop = new THREE.TextBufferGeometry('stop', fontCfg2);
+      fontGeometry_stop.computeBoundingBox();//绑定盒子模型
+      fontGeometry_stop.center();
+      console.log(fontGeometry_stop)
+
+      // 添加帮助按钮文字的素材
+      var color = new THREE.Color(0x006699);
+      var fontMaterial = new THREE.MeshBasicMaterial({
+        flatShading: THREE.FlatShading,
+        transparent: true,
+        opacity: 0.6,
+        color: color,
+        side: THREE.DoubleSide
+      });
+      databus.stoptext = new THREE.Mesh(fontGeometry_stop, fontMaterial);
+      databus.stoptext.position.set(0, -30, 0)
+      //databus.starttext.up.set(0,0,0)
+      console.log(databus.stoptext)
+
+      // 计算出整个模型宽度的一半, 不然模型就会绕着x = 0,中心旋转
+      //databus.stoptext.rotation.y += Math.PI
+      //scene.add(databus.stoptext);
+
+      preLoadDone = true
+    })
+  }
+
+  loadsharedcanvas() {
+    this.open = wx.getOpenDataContext()
+    console.log(this.open)
+    this.sharedCanvas = this.open.canvas
+    console.log(this.sharedCanvas)
+    var rankctx = this.sharedCanvas.getContext('2d')
+    console.log(rankctx)
+    rankctx.fillStyle = "#0000ff";
+    rankctx.fillRect(200, 200, 850, 800);
+    const { pixelRatio, windowHeight, windowWidth } = wx.getSystemInfoSync()
+    //一定要在主域中设定宽高
+    this.sharedCanvas.width = 1000;
+    this.sharedCanvas.height = 1000;
+    //把开放域中的canvas弄到材质里，以后可以用mesh渲染出来
+    this.rankingTexture = new THREE.CanvasTexture(this.sharedCanvas)
+    this.rankingTexture.minFilter = this.rankingTexture.magFilter = THREE.LinearFilter
+    this.rankingTexture.needsUpdate = true
+    console.log(window.innerWidth)
+    let geometry = new THREE.PlaneGeometry(1000, 1000)
+    let material = new THREE.MeshBasicMaterial({ map: this.rankingTexture, transparent: false })
+    this.ranking = new THREE.Mesh(geometry, material)
+    console.log(this.ranking)
+
+    this.ranking.position.set(0, 0, 0)
+    //scene.add(this.ranking)
+    console.log(this.ranking)
+
+    var img = new Image(100, 100)
+    img.src = 'images/bg.png'
+    //img.onload = this.drawImageActualSize(this.ranking);
+    //ctx.drawImage(this.img, 10, 10);
+  }
+
   restart() {
     databus.reset()
     // 清除上一局的动画
@@ -359,7 +336,7 @@ export default class Main {
         pos.x = (touch.clientX / winWidth) * 2 - 1;
         pos.y = - (touch.clientY / winHeight) * 2 + 1;
         raycaster.setFromCamera(pos, databus.camera)
-        intersects = intersects.concat(raycaster.intersectObjects([databus.notes]).map(e => e.object))
+        intersects = intersects.concat(raycaster.intersectObjects(databus.notes).map(e => e.object))
         /* //传入的databus.notes是要检测的是否点击到的物体的数组（必须为Mesh类的数组，不能为Group类的数组），要检测其他的物体，修改databus.notes即可
         intersects = intersects.concat(raycaster.intersectObjects([databus.starttext]).map(e => e.object));
         intersects = intersects.concat(raycaster.intersectObjects([databus.helptext]).map(e => e.object));
@@ -499,7 +476,7 @@ export default class Main {
     while (databus.notelist[0]) {
       createtime = databus.notelist[0].time
       if (createtime <= nowtime) {
-        console.log(nowtime)
+        //console.log(nowtime)
         this.noteadd(databus.notelist.shift(), createtime - nowtime)
       } else {
         break
@@ -542,7 +519,7 @@ export default class Main {
   update() {
     // 更新代码
     if (preLoadDone) {
-      console.log(this.rankinge)
+      //console.log(this.rankinge)
       const delta = clock.getDelta()
       //databus.starttext.lookAt(camera.position)
       //console.log(databus.starttext.up)
