@@ -34,6 +34,7 @@ class DataBus {
     this.notenum = 0
     this.notelist   = []
 
+    //this.starttext = undefined
     this.notes      = []
     this.intersectnotes = []
     //this.camera     = undefined
