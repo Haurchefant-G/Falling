@@ -9,7 +9,7 @@ const __ = {
   speed: Symbol('speed')
 }
 
-let databus = new DataBus()
+//let databus = new DataBus()
 
 export default class Bullet extends Sprite {
   constructor() {

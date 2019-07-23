@@ -34701,7 +34701,7 @@
 
       if (this.path !== undefined) url = this.path + url;
 
-      url = this.manager.resolveURL(url);
+      //url = this.manager.resolveURL(url);
 
       var scope = this;
 
@@ -34750,9 +34750,12 @@
         var isBase64 = !!dataUriRegexResult[2];
         var data = dataUriRegexResult[3];
 
-        data = decodeURIComponent(data);
+        //data = decodeURIComponent(data);
 
-        if (isBase64) data = atob(data);
+        //if (isBase64) data = atob(data);
+
+        data=window.decodeURIComponent(data);
+        if(isBase64)data=window.atob(data);
 
         try {
 
@@ -35471,7 +35474,7 @@
       var loader = new ImageLoader(this.manager);
       loader.setCrossOrigin(this.crossOrigin);
       loader.setPath(this.path);
-
+      console.log(this.crossOrigin);
       loader.load(url, function (image) {
 
         texture.image = image;
@@ -41084,12 +41087,12 @@
       }
 
       if (this.running) {
-
+        
         var newTime = (typeof performance === 'undefined' ? Date : performance).now();
 
         diff = (newTime - this.oldTime) / 1000;
         this.oldTime = newTime;
-
+        
         this.elapsedTime += diff;
 
       }

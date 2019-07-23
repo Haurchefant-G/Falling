@@ -1,21 +1,30 @@
-import Player     from './player/index'
-import Enemy      from './npc/enemy'
-import BackGround from './runtime/background'
-import GameInfo   from './runtime/gameinfo'
+//import Player     from './player/index'
+//import Enemy      from './npc/enemy'
+//import BackGround from './runtime/background'
+//import GameInfo   from './runtime/gameinfo'
 import Music      from './runtime/music'
-import DataBus    from './databus'
+import databus    from './databus'
 import THREE      from './libs/three_modified'
+
 import ObjsURL    from '../objs/url'
 import NOTE       from './note/note'
+import Clock       from './base/clock'
+
+//import { EffectComposer } from './libs/EffectComposer'
+//import { RenderPass } from './libs/RenderPass'
+//import { UnrealBloomPass } from './libs/UnrealBloomPass'
+
 
 require('./libs/weapp-adapter.js')
 
 let ctx = canvas.getContext('webgl', { antialias: true, preserveDrawingBuffer: true })
 //let ctx   = canvas.getContext('2d')
 console.log(canvas)
-let databus = new DataBus()
+
+let FileSystemManager = wx.getFileSystemManager()
+
 let renderer
-let camera
+console.log(wx.env.USER_DATA_PATH)
 let preLoadDone = false
 let scene
 let obj
@@ -29,13 +38,13 @@ let note1 = {
   "time": 100,
   "data": {
     "type": 1,
-    "track": [{ "degree": 240, "delay": 0 }]
+    "track": [{ "degree": 220, "delay": 0 }]
   }
 }
 
 
   
-
+let composer
 let clock
 let container;
 let mesh;
@@ -50,6 +59,13 @@ let winWidth
 let winHeight
 let cameraAspect
 
+var params = {
+  exposure: 0.8,
+  bloomStrength: 2,
+  bloomThreshold: 0,
+  bloomRadius: 1
+};
+
 /**
  * 游戏主函数
  */
@@ -58,6 +74,7 @@ export default class Main {
     // 维护当前requestAnimationFrame的id
     this.aniId    = 0
     scene = new THREE.Scene()
+    databus.scene = scene
 
     renderer = new THREE.WebGLRenderer({ context: ctx, canvas: canvas, alpha:true })
 
@@ -70,24 +87,37 @@ export default class Main {
     console.log(renderer)
 
     loopY = Math.round(-120 / cameraAspect * 0.6)
-    fallstartY = Math.round(120 / cameraAspect * 1)
-    startRadius = 200
+    fallstartY = Math.round(120 / cameraAspect * 3)
+    startRadius = 180
     endRadius = 100
+
+    databus.loopY = loopY
     
     //renderer.setSize(winWidth, winHeight)
     renderer.setPixelRatio(window.devicePixelRatio)
+    renderer.toneMapping = THREE.ReinhardToneMapping
+    //THREE.NoToneMapping
+    //THREE.LinearToneMapping
+    //THREE.ReinhardToneMapping
+    //THREE.Uncharted2ToneMapping
+    //THREE.CineonToneMapping
 
     console.log("屏幕尺寸: " + winWidth + " x " + winHeight)
 
-    this.load()
-	  camera = new THREE.OrthographicCamera(120, -120, 120 / cameraAspect, -120 / cameraAspect,1,100000)
-	  //camera = new THREE.PerspectiveCamera(75, cameraAspect, 1, 100000)
-	  console.log(camera.position)
-    camera.position.set(0, 120 / cameraAspect * 0.3, 300)
-    controls = new THREE.OrbitControls(camera)
+    //this.load()
+	  databus.camera = new THREE.OrthographicCamera(-120, 120, 120 / cameraAspect, -120 / cameraAspect,1,100000)
+    databus.camera.position.set(0, 120 / cameraAspect * 0.5, 160)
+    //camera.position.set(0, 0, -160)
+	  //databus.camera = new THREE.PerspectiveCamera(75, cameraAspect, 1, 100000)
+    //console.log(databus.camera)
+    //databus.camera.position.set(0, 0,170)// 120 / cameraAspect * 1, 170)
+    console.log(databus.camera.position)
+    controls = new THREE.OrbitControls(databus.camera)
     controls.enableRotate = false
-    camera.lookAt(0, 0, 0)
-
+    databus.camera.lookAt(0, 0, 0)
+    scene.add(databus.camera)
+    //console.log(databus.camera)
+    this.load()
 
     // 添加环境光
     let ambientLight = new THREE.AmbientLight(0x999999)
@@ -97,24 +127,59 @@ export default class Main {
     var directionalLight = new THREE.DirectionalLight(0xcccccc);
     directionalLight.position.set(0, 1200, 1000).normalize();
     scene.add(directionalLight);
+
+    var renderScene = new THREE.RenderPass(scene, databus.camera);
+
+    //console.log(databus.camera)
+    var bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(winWidth, winHeight), 1.5, 0.4, 0.85);
+    bloomPass.threshold = params.bloomThreshold;
+    bloomPass.strength = params.bloomStrength;
+    bloomPass.radius = params.bloomRadius;
+
+    composer = new THREE.EffectComposer(renderer);
+    composer.addPass(renderScene);
+    composer.addPass(bloomPass);
+
     console.log(scene)
 
     //计时器
-    clock = new THREE.Clock()
+    clock = new Clock()
     wx.setPreferredFramesPerSecond(60)
 
     //点击获取物体
     raycaster = new THREE.Raycaster()
     console.log(raycaster)
     this.initRaycaster()
+
+    //
+    this.music = new Music()
     this.restart()
   }
 
   restart() {
     databus.reset()
     // 清除上一局的动画
-    window.cancelAnimationFrame(this.aniId)
-    this.loop()
+    this.waitforloop()
+  }
+
+  waitforloop() {
+    if (preLoadDone) {
+      window.cancelAnimationFrame(this.aniId)
+      //this.music.playBgm()
+      this.loadimd()
+      //this.noteadd(note1.data)
+      //this.oldTime = Date.now()
+      //window.setTimeout(clock.start.bind(clock), 2000)
+      window.setTimeout(this.music.playBgm.bind(this.music), 2000)
+      //this.music.playBgm()
+      clock.start()
+      this.loop()
+    } else {
+      this.aniId = window.requestAnimationFrame(
+        this.waitforloop.bind(this),
+        canvas
+      )
+    }
   }
 
   //点击命中物体事件添加
@@ -126,7 +191,7 @@ export default class Main {
       event.touches.forEach((touch) => {
         pos.x = (touch.clientX / winWidth) * 2 - 1;
         pos.y = - (touch.clientY / winHeight) * 2 + 1;
-        raycaster.setFromCamera(pos, camera)
+        raycaster.setFromCamera(pos, databus.camera)
         //传入的databus.notes是要检测的是否点击到的物体的数组（必须为Mesh类的数组，不能为Group类的数组），要检测其他的物体，修改databus.notes即可
         intersects = intersects.concat(raycaster.intersectObjects(databus.notes).map(e => e.object));
       })
@@ -139,59 +204,132 @@ export default class Main {
               obj[i] = 1
           }
         }
-      databus.intersectnotes = result
+      console.log(result)
+      result.forEach(note => {
+        switch(note.status){
+          case 1:
+          NOTE.notejudge(note)
+          if (note.type === 0) {
+            note.status = 3
+          } else {
+            note.status = 2
+          }
+          break
+          case 2:
+          break
+          default:
+          break
+        }})
+      console.log(result)
     })
+
   }
 
   load() {
-    var noteAdd = this.noteadd.bind(this)
-    THREE.loader('https://haurchefant-g.github.io/objs/loop1.mtl', 'https://haurchefant-g.github.io/objs/loop1.obj', function (object) {
-      object.scale.set(1.25, 1.25, 1.25)
-      object.position.y = loopY
+    THREE.loader('https://haurchefant-g.github.io/objs/scene.mtl', 'https://haurchefant-g.github.io/objs/scene.obj', function (object) {
+      databus.goodmesh = object.children[3]
+      databus.badmesh = object.children[4]
+      databus.wonderfulmesh = object.children[6]
+      databus.missmesh = object.children[5]
+      databus.note1mesh = object.children[1]
+      databus.note2mesh = object.children[2]
+      databus.loopmesh = object.children[0]
+      databus.loopmesh.scale.set(1.25, 1.25, 1.25)
+      databus.loopmesh.position.y = loopY
+      scene.add(databus.loopmesh)
       console.log(object)
-      scene.add(object)
-      THREE.loader('https://haurchefant-g.github.io/objs/musicalnote2.mtl', 'https://haurchefant-g.github.io/objs/musicalnote2.obj', function (object2) {
-        musicalnote1 = object2.children[0]
-        console.log(musicalnote1)
-        //noteAdd(note1.data)
-        //window.setInterval(noteAdd, 5000, note1.data)
-        noteAdd(note1.data)
-        preLoadDone = true
-      })
+      console.log(databus)
+      preLoadDone = true
     })
-    // this.loader('https://haurchefant-g.github.io/objs/musicalnote2.mtl', 'https://haurchefant-g.github.io/objs/musicalnote2.obj', function (object) {
-    //   musicalnote1 = object
-    //   console.log(musicalnote1)
-    // })
   }
-  //加载模型
-  // loader(mtlurl, objurl, f) {
-  //   var mtlloader = new THREE.MTLLoader()
-  //   mtlloader.load(mtlurl, function (material) {
-  //     var objloader = new THREE.OBJLoader()
-  //     objloader.setMaterials(material)
-  //     objloader.load(objurl, f)
-  //   })
-  // }
 
+  //加载谱面文件
+  loadimd() {
+    var imd = FileSystemManager.readFileSync('/bin/standalonebeatmasta_4k_hd.bin')//,'binary')
+    databus.keynum = 4
+    databus.shiftdegree = 180 / databus.keynum
 
-  noteadd(data) {
-    var noteobj
-    var arc = Math.PI / 180 * data.track[0].degree
-    //console.log(arc)
-    var fallstartX = Math.cos(arc) * startRadius
-    var fallstartZ = Math.sin(arc) * startRadius
-    //console.log(fallstartX, fallstartY, fallstartZ)
-    switch(data.type) {
-      case 1: noteobj = musicalnote1.clone()
-      noteobj.position.set(fallstartX, fallstartY, fallstartZ)
-      //console.log(noteobj)
-      noteobj.update = NOTE.clicknotetUpdater(arc, fallstartY, fallstartY - loopY, startRadius, endRadius).bind(noteobj)
-      //console.log(noteobj.position)
-      databus.notes.push(noteobj)
-      break
+    imd = new DataView(imd)
+    var index = 0
+    databus.musictime = imd.getInt32(index, true)
+    index += 4
+    var flickernum = imd.getInt32(index, true)
+    databus.flickernum = flickernum
+    index += 4
+    for (let i = 0; i < flickernum; ++i, index += 12) {
+      databus.BPMlist.push({
+        'time': imd.getInt32(index, true), 
+        'BPM': imd.getFloat64(index + 4, true)
+      })
     }
-    scene.add(noteobj)
+    index += 2
+    let notenum = imd.getInt32(index, true)
+    databus.notenum = notenum
+    index += 4
+    for (let i = 0; i < notenum; ++i, index += 11) {
+      databus.notelist.push({
+        'type': imd.getInt16(index, true),
+        'time': imd.getInt32(index + 2, true), 
+        'key': imd.getInt8(index + 6, true),
+        'parameter': imd.getInt32(index + 7, true)
+      })
+    }
+    console.log(imd)
+    console.log(databus.BPMlist)
+    console.log(databus.notelist)
+    console.log('123')
+  }
+
+
+  flicker() {
+    
+  }
+
+  playnotelist() {
+    let nowtime = clock.getElapsedTime()
+    //console.log(nowtime)
+    let createtime
+    while (databus.notelist[0]) {
+      createtime = databus.notelist[0].time
+      if (createtime <= nowtime) {
+        console.log(nowtime)
+        this.noteadd(databus.notelist.shift(), createtime - nowtime)
+      } else {
+        break
+      }
+    }
+  }
+
+  /*{
+  'type': imd.getInt16(index, true),
+    'time': imd.getInt32(index + 2, true),
+      'key': imd.getInt8(index + 6, true),
+        'parameter': imd.getInt32(index + 7, true)
+}*/
+
+  noteadd(data, delta = 0) {
+    if (data.type == 0) {
+      var noteobj
+      var arc = Math.PI / 180 * ((data.key + 0.5) * databus.shiftdegree + 180)
+      var fallstartX = Math.cos(arc) * startRadius
+      var fallstartZ = Math.sin(arc) * startRadius
+
+      switch (data.type) {
+        case 0: noteobj = databus.note2mesh.clone()
+          noteobj.position.set(fallstartX, fallstartY, fallstartZ)
+          noteobj.update = NOTE.clicknotetUpdater(arc, fallstartY, fallstartY - loopY, startRadius, endRadius).bind(noteobj)
+          break
+      }
+      noteobj.fade = NOTE.notetFadeUpdater().bind(noteobj)
+      noteobj.status = 1
+      noteobj.type = data.type
+      noteobj.parameter = data.parameter
+      databus.notes.push(noteobj)
+      if (delta) {
+        noteobj.update(delta)
+      }
+      scene.add(noteobj)
+    }
   }
 
   update() {
@@ -199,16 +337,29 @@ export default class Main {
     if (preLoadDone) {
       const delta = clock.getDelta()
       //console.log(delta)
-      //camera.rotation.x += 0.01
-      //camera.rotation.y += 0.01
-      //camera.rotation.z += 0.01
-      //console.log(camera)
-      //console.log(camera.position)
+      databus.notemessage.forEach((message) => {
+        //console.log(databus.camera)
+        //console.log(message.scale.x + ' ' + message.scale.y + ' ' + message.scale.z)
+        //console.log(message.position)
+        message.update(databus.camera.position)
+      })
+      databus.notemessage = databus.notemessage.filter((message) => {return !message.dead})
       databus.notes.forEach((note) => {
         //console.log(note)
-        note.update(delta)
+        switch(note.status) {
+          case 1: note.update(delta)
+          break
+          case 2:
+          break
+          case 3: note.fade()
+          break
+        }
         //console.log(note.position)
       })
+      //console.log(databus.notelist)
+      databus.notes = databus.notes.filter((note) => { return (note.status !== 4) })
+      this.playnotelist()
+      //console.log(databus.notes)
     } else {
       //console.log('FFF')
     }
@@ -221,13 +372,19 @@ export default class Main {
    */
   render() {
     if (preLoadDone) {
-      
-      renderer.render(scene, camera)
+      composer.render()
+      //renderer.render(scene, camera)
     }
   }
 
   // 实现帧循环
   loop() {
+    //if (databus.frame % 300 === 150) {
+      //this.noteadd(note1.data)
+      //console.log(Date.now())
+    //}
+    //++databus.frame
+    //console.log(databus.frame)
     this.update()
     this.render()
     //console.log('update')
@@ -260,49 +417,6 @@ export default class Main {
   //     this.bindLoop,
   //     canvas
   //   )
-  // }
-
-  // /**
-  //  * 随着帧数变化的敌机生成逻辑
-  //  * 帧数取模定义成生成的频率
-  //  */
-  // enemyGenerate() {
-  //   if ( databus.frame % 30 === 0 ) {
-  //     let enemy = databus.pool.getItemByClass('enemy', Enemy)
-  //     enemy.init(6)
-  //     databus.enemys.push(enemy)
-  //   }
-  // }
-
-  // // 全局碰撞检测
-  // collisionDetection() {
-  //   let that = this
-
-  //   databus.bullets.forEach((bullet) => {
-  //     for ( let i = 0, il = databus.enemys.length; i < il;i++ ) {
-  //       let enemy = databus.enemys[i]
-
-  //       if ( !enemy.isPlaying && enemy.isCollideWith(bullet) ) {
-  //         enemy.playAnimation()
-  //         that.music.playExplosion()
-
-  //         bullet.visible = false
-  //         databus.score  += 1
-
-  //         break
-  //       }
-  //     }
-  //   })
-
-  //   for ( let i = 0, il = databus.enemys.length; i < il;i++ ) {
-  //     let enemy = databus.enemys[i]
-
-  //     if ( this.player.isCollideWith(enemy) ) {
-  //       databus.gameOver = true
-
-  //       break
-  //     }
-  //   }
   // }
 
   // // 游戏结束后的触摸事件处理逻辑

@@ -5,7 +5,7 @@ let instance
 /**
  * 全局状态管理器
  */
-export default class DataBus {
+class DataBus {
   constructor() {
     if ( instance )
       return instance
@@ -20,12 +20,36 @@ export default class DataBus {
   reset() {
     this.frame      = 0
     this.score      = 0
+
+    this.musicname = ''
+    this.keynum = 0
+    this.shiftdegree = 0
+    this.level = ''
+
+    this.musictime = 0
+    this.BMP        = 0
+    this.flickernum = 0
+    this.BPMlist = []
+
+    this.notenum = 0
+    this.notelist   = []
+
     this.notes      = []
     this.intersectnotes = []
+    //this.camera     = undefined
     this.bullets    = []
     this.enemys     = []
     this.animations = []
+
     this.gameOver   = false
+    this.goodmesh = undefined
+    this.badmesh = undefined
+    this.wonderfulmesh = undefined
+    this.missmesh = undefined
+    this.note1mesh = undefined
+    this.note2mesh = undefined
+    this.loopmesh = undefined
+    this.notemessage = []
   }
 
   /**
@@ -52,3 +76,6 @@ export default class DataBus {
     this.pool.recover('bullet', bullet)
   }
 }
+
+var databus = new DataBus()
+export default databus
