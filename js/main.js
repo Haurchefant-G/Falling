@@ -23,27 +23,18 @@ let ctx = canvas.getContext('webgl', { antialias: true, preserveDrawingBuffer: t
 
 console.log(canvas)
 
-let FileSystemManager = wx.getFileSystemManager()
+let fs = wx.getFileSystemManager()
 
 let renderer
 console.log(wx.env.USER_DATA_PATH)
 let preLoadDone = false
 let scene
-let obj
 
 
 let fallstartY     //打击音符开始下落的高度y
 let loopY       //判定环的y坐标
 let startRadius //打击音符开始下落相对y轴的距离
 let endRadius     //打击音符结束下落相对y轴的距离
-
-let note1 = {
-  "time": 100,
-  "data": {
-    "type": 1,
-    "track": [{ "degree": 220, "delay": 0 }]
-  }
-}
 
 
   
@@ -90,7 +81,7 @@ export default class Main {
     console.log(canvas.width)
     winHeight = canvas.height
     cameraAspect = winWidth / winHeight
-    console.log(renderer)
+    //console.log(renderer)
 
     loopY = Math.round(-120 / cameraAspect * 0.6)
     fallstartY = Math.round(120 / cameraAspect * 3)
@@ -118,14 +109,19 @@ export default class Main {
 	  //databus.camera = new THREE.PerspectiveCamera(75, cameraAspect, 1, 100000)
     //console.log(databus.camera)
     //databus.camera.position.set(0, 0,170)// 120 / cameraAspect * 1, 170)
-    console.log(databus.camera.position)
+    //console.log(databus.camera.position)
     controls = new THREE.OrbitControls(databus.camera)
     controls.enableRotate = false
     databus.camera.lookAt(0, 0, 0)
     scene.add(databus.camera)
     //console.log(databus.camera)
+
+    var loader1 = new THREE.TextureLoader();
+    // 加载一个资源
+    //loader1.load('js/3.png')
+    
+    
     this.load()
-   // this.load()
 
 /*     this.scene = new THREE.Scene()
     this.camera =new THREE.OrthographicCamera(window.innerWidth/-2,window.innerHeight/2, window.innerHeight / -2, 0, 10000) */
@@ -159,7 +155,7 @@ export default class Main {
 
     //点击获取物体
     raycaster = new THREE.Raycaster()
-    console.log(raycaster)
+    //console.log(raycaster)
     this.initRaycaster()
 
     //
@@ -263,7 +259,7 @@ export default class Main {
       //databus.stoptext.rotation.y += Math.PI
       //scene.add(databus.stoptext);
 
-      preLoadDone = true
+      //preLoadDone = true
     })
   }
 
@@ -309,16 +305,14 @@ export default class Main {
   waitforloop() {
     if (preLoadDone) {
       window.cancelAnimationFrame(this.aniId)
-      //this.music.playBgm()
       this.loadimd()
-      //this.noteadd(note1.data)
-      //this.oldTime = Date.now()
-      //window.setTimeout(clock.start.bind(clock), 2000)
+      wx.onShow()
+      wx.onHide()
       window.setTimeout(this.music.playBgm.bind(this.music), 2000)
-      //this.music.playBgm()
       clock.start()
       this.loop()
     } else {
+      //this.render()
       this.aniId = window.requestAnimationFrame(
         this.waitforloop.bind(this),
         canvas
@@ -410,26 +404,29 @@ export default class Main {
   }
 
   load() {
-    THREE.loader('https://haurchefant-g.github.io/objs/scene.mtl', 'https://haurchefant-g.github.io/objs/scene.obj', function (object) {
-      databus.goodmesh = object.children[3]
-      databus.badmesh = object.children[4]
-      databus.wonderfulmesh = object.children[6]
-      databus.missmesh = object.children[5]
-      databus.note1mesh = object.children[1]
-      databus.note2mesh = object.children[2]
-      databus.loopmesh = object.children[0]
+    var temp = this.render.bind(this)
+    let mtl = fs.readFileSync('/objs/scene.mtl', 'utf-8')
+    let obj = fs.readFileSync('/objs/scene.obj', 'utf-8')
+    THREE.packagefileloader(mtl, obj, function (object) {
+      //console.log(object)
+      databus.goodmesh = object.children[3].clone()
+      databus.badmesh = object.children[4].clone()
+      databus.wonderfulmesh = object.children[6].clone()
+      databus.missmesh = object.children[5].clone()
+      databus.note1mesh = object.children[1].clone()
+      databus.note2mesh = object.children[2].clone()
+      databus.loopmesh = object.children[0].clone()
       databus.loopmesh.scale.set(1.25, 1.25, 1.25)
       databus.loopmesh.position.y = loopY
       scene.add(databus.loopmesh)
-      console.log(object)
-      console.log(databus)
+      //temp()
       preLoadDone = true
     })
   }
 
   //加载谱面文件
   loadimd() {
-    var imd = FileSystemManager.readFileSync('/bin/standalonebeatmasta_4k_hd.bin')//,'binary')
+    var imd = fs.readFileSync('/bin/standalonebeatmasta_4k_hd.bin')//,'binary')
     databus.keynum = 4
     databus.shiftdegree = 180 / databus.keynum
 
@@ -458,10 +455,9 @@ export default class Main {
         'parameter': imd.getInt32(index + 7, true)
       })
     }
-    console.log(imd)
-    console.log(databus.BPMlist)
-    console.log(databus.notelist)
-    console.log('123')
+    //console.log(imd)
+    //console.log(databus.BPMlist)
+    //console.log(databus.notelist)
   }
 
 
@@ -521,13 +517,7 @@ export default class Main {
     if (preLoadDone) {
       //console.log(this.rankinge)
       const delta = clock.getDelta()
-      //databus.starttext.lookAt(camera.position)
-      //console.log(databus.starttext.up)
-      //console.log(delta)
       databus.notemessage.forEach((message) => {
-        //console.log(databus.camera)
-        //console.log(message.scale.x + ' ' + message.scale.y + ' ' + message.scale.z)
-        //console.log(message.position)
         message.update(databus.camera.position)
       })
       databus.notemessage = databus.notemessage.filter((message) => {return !message.dead})
@@ -564,17 +554,14 @@ export default class Main {
     }
   }
 
+  pause() {
+
+  }
+
   // 实现帧循环
   loop() {
-    //if (databus.frame % 300 === 150) {
-      //this.noteadd(note1.data)
-      //console.log(Date.now())
-    //}
-    //++databus.frame
-    //console.log(databus.frame)
     this.update()
     this.render()
-    //console.log('update')
     this.aniId = window.requestAnimationFrame(
       this.loop.bind(this),
       canvas

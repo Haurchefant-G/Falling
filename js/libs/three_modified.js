@@ -18,6 +18,30 @@ THREE.MTLLoader.prototype = {
 
 	crossOrigin: 'anonymous',
 
+	
+	/**
+	 * 加载代码包资源文件（转换为string）.
+	 *
+	 * @param {String} file - file in string.
+	 * @param {Function} [onLoad] - Callback invoked with the loaded object.
+	 * @param {Function} [onProgress] - Callback for download progress.
+	 * @param {Function} [onError] - Callback for download errors.
+	 *
+	 * @see setPath setResourcePath
+	 *
+	 * @note In order for relative texture references to resolve correctly
+	 * you must call setResourcePath() explicitly prior to load.
+	 */
+
+	loadpackagefile: function ( file, onLoad, onProgress, onError ) {
+
+		var scope = this;
+		this.manager = THREE.DefaultLoadingManager
+
+		onLoad( scope.parse( file ) );
+
+	},
+
 	/**
 	 * Loads and parses a MTL asset from a URL.
 	 *
@@ -37,7 +61,9 @@ THREE.MTLLoader.prototype = {
 
 		var path = ( this.path === undefined ) ? THREE.LoaderUtils.extractUrlBase( url ) : this.path;
 
+
 		var loader = new THREE.FileLoader( this.manager );
+
 		loader.setPath( this.path );
 		loader.load( url, function ( text ) {
 
@@ -963,6 +989,28 @@ THREE.OBJLoader = ( function () {
 	OBJLoader.prototype = {
 
 		constructor: OBJLoader,
+
+		/**
+		 * 加载代码包资源文件（转换为string）.
+		 *
+		 * @param {String} file - file in string.
+		 * @param {Function} [onLoad] - Callback invoked with the loaded object.
+		 * @param {Function} [onProgress] - Callback for download progress.
+		 * @param {Function} [onError] - Callback for download errors.
+		 * 
+		 * @see setPath setResourcePath
+		 * 
+		 * @note In order for relative texture references to resolve correctly
+		 * you must call setResourcePath() explicitly prior to load.
+		 */
+		loadpackagefile: function ( file, onLoad, onProgress, onError ) {
+			
+			var scope = this;
+			
+			this.manager = THREE.DefaultLoadingManager
+
+			onLoad( scope.parse( file ) );
+		},
 
 		load: function ( url, onLoad, onProgress, onError ) {
 
@@ -3429,6 +3477,15 @@ THREE.loader = function loader(mtlurl, objurl, f) {
     objloader.load(objurl, f)
   })
 }
+
+THREE.packagefileloader = function packagefileloader(mtl, obj, f) {
+	var mtlloader = new THREE.MTLLoader()
+	mtlloader.loadpackagefile(mtl, function (material) {
+	  var objloader = new THREE.OBJLoader()
+	  objloader.setMaterials(material)
+	  objloader.loadpackagefile(obj, f)
+	})
+  }
 
 
 export default THREE

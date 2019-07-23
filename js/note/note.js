@@ -1,7 +1,7 @@
 import databus    from '../databus'
 
 const advanceTime = 2000
-const Miss = 2
+const Miss = 5
 const Perfect =  5
 const Good =  10
 var frame = 0
@@ -36,9 +36,6 @@ function clicknotetUpdater(arc, fallstartY, vertical, startRadius, endRadius) {
     this.position.x = (startRadius + d) * Math.cos(arc)
     this.position.z = (startRadius + d) * Math.sin(arc)
     this.rotation.y += 0.1
-    //time += delta * 1000
-    //console.log(delta*6000 + ', ' + time + ' , '+ frame)
-    //frame++
     if((fallstartY - this.position.y - vertical) > Miss) {
       this.status = 3
       //console.log(this.position)

@@ -34701,7 +34701,7 @@
 
       if (this.path !== undefined) url = this.path + url;
 
-      //url = this.manager.resolveURL(url);
+      url = this.manager.resolveURL(url);     
 
       var scope = this;
 
@@ -34742,6 +34742,7 @@
       // Check for data: URI
       var dataUriRegex = /^data:(.*?)(;base64)?,(.*)$/;
       var dataUriRegexResult = url.match(dataUriRegex);
+
 
       // Safari can not handle Data URIs through XMLHttpRequest so process manually
       if (dataUriRegexResult) {
@@ -34958,6 +34959,7 @@
       scope.manager.itemStart(url);
 
       return request;
+      
 
     },
 
@@ -35474,7 +35476,7 @@
       var loader = new ImageLoader(this.manager);
       loader.setCrossOrigin(this.crossOrigin);
       loader.setPath(this.path);
-      console.log(this.crossOrigin);
+
       loader.load(url, function (image) {
 
         texture.image = image;

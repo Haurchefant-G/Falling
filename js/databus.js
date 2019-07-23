@@ -21,6 +21,8 @@ class DataBus {
     this.frame      = 0
     this.score      = 0
 
+    this.gameover = false
+
     this.musicname = ''
     this.keynum = 0
     this.shiftdegree = 0
@@ -41,15 +43,6 @@ class DataBus {
     this.bullets    = []
     this.enemys     = []
     this.animations = []
-
-    this.gameOver   = false
-    this.goodmesh = undefined
-    this.badmesh = undefined
-    this.wonderfulmesh = undefined
-    this.missmesh = undefined
-    this.note1mesh = undefined
-    this.note2mesh = undefined
-    this.loopmesh = undefined
     this.notemessage = []
   }
 
