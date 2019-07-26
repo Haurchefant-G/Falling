@@ -10,7 +10,6 @@ import ObjsURL    from '../objs/url'
 import NOTE       from './note/note'
 import Clock       from './base/clock'
 
-
 //import { EffectComposer } from './libs/EffectComposer'
 //import { RenderPass } from './libs/RenderPass'
 //import { UnrealBloomPass } from './libs/UnrealBloomPass'
@@ -62,7 +61,7 @@ let cameraAspect
 var params = {
   exposure: 0.8,
   bloomStrength:  1.5,
-  bloomThreshold: 0.28,
+  bloomThreshold: 0.3,
   bloomRadius: 1
 }
 
@@ -163,7 +162,6 @@ export default class Main {
 
     //点击获取物体
     raycaster = new THREE.Raycaster()
-    Databus.raycaster = raycaster
     //console.log(raycaster)
     //this.initRaycaster()
     this.entry()
@@ -194,30 +192,107 @@ export default class Main {
     this.waitforloop()
   }
 
-  waitformusic() {
-    if (preLoadDone && Databus.musicready) {
+  waitforloop() {
+    if (preLoadDone) {
       window.cancelAnimationFrame(this.aniId)
-      this.loadimd()
-      Databus.musicload = false
-      scene.add(Databus.loopmesh)
+      //this.loadimd()
       //wx.onShow()
-      wx.onHide(this.pause.bind(this))
-      bloomPass.threshold = 0;
-      bloomPass.strength = 2 //params.bloomStrength;
-      bloomPass.radius = params.bloomRadius;
-      window.setTimeout(this.music.playBgm.bind(this.music), 2000)
+      //wx.onHide()
+      //window.setTimeout(this.music.playBgm.bind(this.music), 2000)
       clock.start()
-      this.loop()
+      this.renderscoreUI()
+      //this.loop()
     } else {
       //this.render()
-      this.texture.needsUpdate = true
-      Databus.updateUI()
-      composer.render()
       this.aniId = window.requestAnimationFrame(
-        this.waitformusic.bind(this),
+        this.waitforloop.bind(this),
         canvas
       )
     }
+  }
+
+  //点击命中物体事件添加
+  initRaycaster() {
+    //canvas.addEventListener('touchstart', (event) => {
+    wx.onTouchStart((event) => {
+      var pos = new THREE.Vector2();
+      var intersects = []
+      //寻找命中的note
+      event.touches.forEach((touch) => {
+        pos.x = (touch.clientX / winWidth) * 2 - 1;
+        pos.y = - (touch.clientY / winHeight) * 2 + 1;
+        raycaster.setFromCamera(pos, camera)
+        intersects = intersects.concat(raycaster.intersectObjects(scene.children).map(e => e.object))
+        /* //传入的databus.notes是要检测的是否点击到的物体的数组（必须为Mesh类的数组，不能为Group类的数组），要检测其他的物体，修改databus.notes即可
+        intersects = intersects.concat(raycaster.intersectObjects([databus.starttext]).map(e => e.object));
+        intersects = intersects.concat(raycaster.intersectObjects([databus.helptext]).map(e => e.object));
+        intersects = intersects.concat(raycaster.intersectObjects([databus.stoptext]).map(e => e.object));
+        intersects = intersects.concat(raycaster.intersectObjects([databus.backtext]).map(e => e.object)); */
+      })
+      //命中note去重
+      let result = []
+      let obj = {}
+      for (let i of intersects) {
+          if (!obj[i]) {
+              result.push(i)
+              obj[i] = 1
+          }
+        }
+      console.log(result)
+      result.forEach(note => {
+        switch(note.status){
+          case 1:
+          NOTE.notejudge(note)
+          if (note.type === 0) {
+            note.status = 3
+          } else {
+            note.status = 2
+          }
+          break
+          case 2:
+          break
+          default:
+          break
+        }})
+      console.log(result)
+      /* //start点击检测
+      result.forEach(child => {
+        if(child === databus.starttext) {
+          scene.remove(databus.starttext)
+          scene.remove(databus.helptext)
+          this.load()
+        }
+      })
+      //help点击检测
+      result.forEach(child => {
+        if(child === databus.helptext) {
+          scene.remove(child)
+          scene.remove(databus.starttext)
+          scene.add(databus.backtext);
+          //this.load()
+        }
+      })
+      //stop点击检测
+      result.forEach(child => {
+        if(child === databus.stoptext) {
+          scene.remove(child)
+          preLoadDone=false;
+          //this.load()
+        }
+      })
+      //back点击检测
+      result.forEach(child => {
+        if(child === databus.backtext) {
+          scene.add(camera)
+          scene.remove(databus.backtext)
+          scene.remove(child)
+          scene.add(databus.starttext)
+          scene.add(databus.helptext)
+          //this.load()
+        }
+      }) */
+    })
+
   }
 
   load() {
@@ -241,45 +316,10 @@ export default class Main {
     })
   }
 
-  downloadmusic() {
-    let that = this
-    fs.access({
-      path: `${wx.env.USER_DATA_PATH}/` + Databus.musicname + '.mp3',
-      success () {
-        that.music.setBgm(`${wx.env.USER_DATA_PATH}/` + Databus.musicname + '.mp3')
-        Databus.musicready = true
-      },
-      fail(res) {
-        wx.downloadFile({
-          url: 'https://haurchefant-g.github.io/mp3/' + Databus.musicname + '.mp3', //音乐文件
-          filePath: `${wx.env.USER_DATA_PATH}/` + Databus.musicname + '.mp3',
-          success (res) {
-            // 只要服务器有响应数据，就会把响应内容写入文件并进入 success 回调，业务需要自行判断是否下载到了想要的内容
-            if (res.statusCode === 200) {
-              that.music.setBgm(res.filePath)
-              Databus.musicready = true
-            } else {
-              that.aniId = window.requestAnimationFrame(
-                that.waitformusic.bind(that),
-                canvas
-                )
-            }
-          },
-          fail () {
-            that.aniId = window.requestAnimationFrame(
-              that.waitformusic.bind(that),
-              canvas
-              )
-          }
-        })
-
-      }
-    })
-  }
-
   //加载谱面文件
   loadimd() {
-    var imd = fs.readFileSync('/bin/' + Databus.musicname + '_' + Databus.keynum + 'k_' + Databus.level + '.bin') //,'binary')
+    var imd = fs.readFileSync('/bin/standalonebeatmasta_4k_hd.bin')//,'binary')
+    Databus.keynum = 4
     Databus.shiftdegree = 180 / Databus.keynum
 
     imd = new DataView(imd)
@@ -364,12 +404,12 @@ export default class Main {
     }
   }
 
-  update(delta) {
+  update() {
     // 更新代码
-    this.texture.needsUpdate = true
     Databus.updateUI()
-    if (Databus.musicready && !Databus.gameover) {
+    if (gaming) {
       //console.log(this.rankinge)
+      const delta = clock.getDelta()
       Databus.notemessage.forEach((message) => {
         message.update(camera.position)
       })
@@ -408,44 +448,32 @@ export default class Main {
     //}
   }
 
+  pause() {
+
+  }
+
   // 实现帧循环
   loop() {
-    const delta = clock.getDelta()
-    this.update(delta)
+    this.texture.needsUpdate = true
+    this.update()
     this.render()
-    if (Databus.musicload) {
-      this.downloadmusic()
-      this.aniId = window.requestAnimationFrame(
-        this.waitformusic.bind(this),
-        canvas
-      )
-    } else {
-      this.aniId = window.requestAnimationFrame(
-        this.loop.bind(this),
-        canvas
-        )
-    }
+    this.aniId = window.requestAnimationFrame(
+      this.loop.bind(this),
+      canvas
+    )
   }
-
-  pause() {
-    window.cancelAnimationFrame(this.aniId)
-    this.music.pauseBgm()
-    let delta = clock.pause()
-    Databus.updateUI = ui.pauseUI.bind(ui)
-    this.update(delta)
-    console.log('pause')
-    //this.texture.needsUpdate = true
-    //this.update(delta)
-    //this.texture.needsUpdate = true
-    this.render()
-
-  }
-
 
   renderscoreUI() {
 
     //ui.scoreUI(100, databus.combo)
     //ui.entryUI()
+    this.texture = new THREE.CanvasTexture(ui.canvas)
+    this.texture.needsUpdate = true
+    this.texture.minFilter = THREE.LinearFilter
+    this.material = new THREE.MeshBasicMaterial({ map: this.texture, transparent: true})
+    //material.map.needsUpdate = true
+    let geometry = new THREE.PlaneGeometry(winWidth, winHeight)
+    this.uiplane = new THREE.Mesh(geometry, this.material)
     //sprite.needsUpdate = true
     this.uiplane.position.set(0,0,0)
     //this.uiplane.scale.set(0.5, 0.5, 1)
@@ -457,8 +485,34 @@ export default class Main {
     //renderer.render(scene, camera)
     //scene.remove(sprite)
     this.i = 1
+    this.rendertest()
+    //window.requestAnimationFrame(
+      //this.renderscoreUI.bind(this),
+      //canvas
+    //)
     
     this.i = 1
+  }
+
+  rendertest() {
+    
+    //ui.scoreUI(this.i, databus.combo)
+    ui.entryUI()
+    this.texture.needsUpdate = true
+    //this.texture.canvas = ui.canvas
+    //this.material.map = this.texture
+    //renderer.autoClear = false;
+    //renderer.clear();
+    
+    composer.render()
+    //renderer.clearDepth();
+    //renderer.render(uiscene, uicamera); 
+    //renderer.clearDepth();
+    //console.log(this.i)
+    window.requestAnimationFrame(
+      this.rendertest.bind(this),
+      canvas
+    )
   }
 
   loadsharedcanvas() {
@@ -689,90 +743,6 @@ export default class Main {
       //preLoadDone = true
     })
   }
-
-    // //点击命中物体事件添加
-    // initRaycaster() {
-    //   //canvas.addEventListener('touchstart', (event) => {
-    //   wx.onTouchStart((event) => {
-    //     var pos = new THREE.Vector2();
-    //     var intersects = []
-    //     //寻找命中的note
-    //     event.touches.forEach((touch) => {
-    //       pos.x = (touch.clientX / winWidth) * 2 - 1;
-    //       pos.y = - (touch.clientY / winHeight) * 2 + 1;
-    //       raycaster.setFromCamera(pos, camera)
-    //       intersects = intersects.concat(raycaster.intersectObjects(scene.children).map(e => e.object))
-    //       /* //传入的databus.notes是要检测的是否点击到的物体的数组（必须为Mesh类的数组，不能为Group类的数组），要检测其他的物体，修改databus.notes即可
-    //       intersects = intersects.concat(raycaster.intersectObjects([databus.starttext]).map(e => e.object));
-    //       intersects = intersects.concat(raycaster.intersectObjects([databus.helptext]).map(e => e.object));
-    //       intersects = intersects.concat(raycaster.intersectObjects([databus.stoptext]).map(e => e.object));
-    //       intersects = intersects.concat(raycaster.intersectObjects([databus.backtext]).map(e => e.object)); */
-    //     })
-    //     //命中note去重
-    //     let result = []
-    //     let obj = {}
-    //     for (let i of intersects) {
-    //         if (!obj[i]) {
-    //             result.push(i)
-    //             obj[i] = 1
-    //         }
-    //       }
-    //     console.log(result)
-    //     result.forEach(note => {
-    //       switch(note.status){
-    //         case 1:
-    //         NOTE.notejudge(note)
-    //         if (note.type === 0) {
-    //           note.status = 3
-    //         } else {
-    //           note.status = 2
-    //         }
-    //         break
-    //         case 2:
-    //         break
-    //         default:
-    //         break
-    //       }})
-    //     console.log(result)
-    //     /* //start点击检测
-    //     result.forEach(child => {
-    //       if(child === databus.starttext) {
-    //         scene.remove(databus.starttext)
-    //         scene.remove(databus.helptext)
-    //         this.load()
-    //       }
-    //     })
-    //     //help点击检测
-    //     result.forEach(child => {
-    //       if(child === databus.helptext) {
-    //         scene.remove(child)
-    //         scene.remove(databus.starttext)
-    //         scene.add(databus.backtext);
-    //         //this.load()
-    //       }
-    //     })
-    //     //stop点击检测
-    //     result.forEach(child => {
-    //       if(child === databus.stoptext) {
-    //         scene.remove(child)
-    //         preLoadDone=false;
-    //         //this.load()
-    //       }
-    //     })
-    //     //back点击检测
-    //     result.forEach(child => {
-    //       if(child === databus.backtext) {
-    //         scene.add(camera)
-    //         scene.remove(databus.backtext)
-    //         scene.remove(child)
-    //         scene.add(databus.starttext)
-    //         scene.add(databus.helptext)
-    //         //this.load()
-    //       }
-    //     }) */
-    //   })
-  
-    // }
 }
 
 

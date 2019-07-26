@@ -1,6 +1,4 @@
 import Databus from '../databus'
-import NOTE       from '../note/note'
-import THREE      from '../libs/three_modified'
 
 const screenWidth = window.innerWidth
 const screenHeight = window.innerHeight  
@@ -73,7 +71,7 @@ container.src = CONTAINER_IMG_SRC
 const MUSICLIST = [
   { name: 'chinax', keynum: 4, level: 'hd' },
   { name: 'shadowgraph', keynum: 4, level: 'hd' },
-  { name: 'Identity4', keynum: 4, level: 'hd' },
+  { name: 'identity4', keynum: 4, level: 'hd' },
   { name: 'standalonebeatmasta', keynum: 4, level: 'hd' }]
 
 let target = 1
@@ -259,7 +257,7 @@ export default class UI {
           wx.offTouchStart(Databus.touchstart)
           wx.offTouchEnd(Databus.touchend)
         }
-      } else if ( Math.abs(h < 2) && Math.abs(w < 2)) {
+      } else if ( (h < 2) && (w < 2)) {
         this.choosemusic(e.changedTouches[0])
       }
     }
@@ -267,6 +265,7 @@ export default class UI {
 
   menuslideUI() {
     ++frame
+    this.ctx.globalAlpha = 1
     let height = screenHeight
     let width = height / ENTRY_HEIGHT * ENTRY_WIDTH
     this.ctx.drawImage(entry, (screenWidth - width) / 2, (screenHeight - height) / 2, width, height)
@@ -332,133 +331,10 @@ export default class UI {
       Databus.updateUI = this.menuUI.bind(this)
       frame = 120
     }
-    this.ctx.globalAlpha = 1
   }
 
-  choosemusic(e) {
-    let width = screenWidth * 0.6
-    let height = screenHeight * 0.3
-    if((e.clientX > (screenWidth - width) / 2) &&
-    (e.clientX < (screenWidth - width) / 2 + width) &&
-    (e.clientY > (screenHeight - height) / 2) &&
-    (e.clientY < (screenHeight - height) / 2 + height)) {
-      Databus.reset()
-      Databus.musicname = MUSICLIST[target].name
-      Databus.keynum = MUSICLIST[target].keynum
-      Databus.level= MUSICLIST[target].level
-      Databus.updateUI = this.tomusicUI.bind(this)
-      wx.offTouchStart(Databus.touchstart)
-      wx.offTouchEnd(Databus.touchend)
-    } else {
-      width = screenWidth * 0.5
-      height = screenHeight * 0.25
-      if((target > 0) &&
-      (e.clientX > (screenWidth - width) / 2) &&
-      (e.clientX < (screenWidth - width) / 2 + width) &&
-      (e.clientY > screenHeight * 0.05) &&
-      (e.clientY < screenHeight * 0.05 + height)) {
-        Databus.reset()
-        Databus.musicname = MUSICLIST[target - 1].name
-        Databus.keynum = MUSICLIST[target - 1].keynum
-        Databus.level= MUSICLIST[target - 1].level
-        Databus.updateUI = this.tomusicUI.bind(this)
-        wx.offTouchStart(Databus.touchstart)
-        wx.offTouchEnd(Databus.touchend)
-      } else if ((target < MUSICLIST.length - 1) &&
-      (e.clientX > (screenWidth - width) / 2) &&
-      (e.clientX < (screenWidth - width) / 2 + width) &&
-      (e.clientY > screenHeight * 0.7) &&
-      (e.clientY < screenHeight * 0.7 + height)) {
-        Databus.reset()
-        Databus.musicname = MUSICLIST[target + 1].name
-        Databus.keynum = MUSICLIST[target + 1].keynum
-        Databus.level= MUSICLIST[target + 1].level
-        Databus.updateUI = this.tomusicUI.bind(this)
-        wx.offTouchStart(Databus.touchstart)
-        wx.offTouchEnd(Databus.touchend)
-      }
-    }
-  }
+  choosemusic() {
 
-  tomusicUI() {
-    this.clear()
-    this.ctx.globalAlpha = 1
-    let height = screenHeight
-    let width = height / ENTRY_HEIGHT * ENTRY_WIDTH
-    this.ctx.drawImage(entry, (screenWidth - width) / 2, (screenHeight - height) / 2, width, height)
-
-    height = screenHeight * HALO_HEIGHT / ENTRY_HEIGHT
-    width = height
-    this.ctx.translate(screenWidth / 2, screenHeight / 2)
-    this.ctx.rotate(Math.PI / 180 * degree)
-    this.ctx.translate(- screenWidth / 2, - screenHeight / 2)
-    //this.ctx.globalAlpha = Math.cos(1.5 * Math.PI / 180 * degree) * 0.2 + 0.7
-    this.ctx.drawImage(halo, (screenWidth - width) / 2, (screenHeight - height) / 2, width, height)
-    this.ctx.translate(screenWidth / 2, screenHeight / 2)
-    this.ctx.rotate(-Math.PI / 180 * degree)
-    this.ctx.translate(- screenWidth / 2, - screenHeight / 2)
-    ++degree
-    if(Databus.musicready) {
-      Databus.updateUI = this.musicUI.bind(this)
-      console.log(Databus.updateUI)
-      Databus.touchstart = this.musictouch.bind(this)
-      wx.onTouchStart(Databus.touchstart)
-    }
-  }
-
-  musicUI() {
-    this.clear()
-  }
-
-  musictouch(event) {
-    var pos = new THREE.Vector2();
-    var intersects = []
-    //寻找命中的note
-    event.touches.forEach((touch) => {
-      pos.x = (touch.clientX / screenWidth) * 2 - 1;
-      pos.y = - (touch.clientY / screenHeight) * 2 + 1;
-      Databus.raycaster.setFromCamera(pos, Databus.camera)
-      intersects = intersects.concat(Databus.raycaster.intersectObjects(Databus.notes).map(e => e.object))
-    })
-    //命中note去重
-    let result = []
-    let obj = {}
-    for (let i of intersects) {
-        if (!obj[i]) {
-            result.push(i)
-            obj[i] = 1
-        }
-      }
-    result.forEach(note => {
-      switch(note.status){
-        case 1:
-        NOTE.notejudge(note)
-        if (note.type === 0) {
-          note.status = 3
-        } else {
-          note.status = 2
-        }
-        break
-        case 2:
-        break
-        default:
-        break
-      }})
-    console.log(result)
-  }
-
-  pauseUI() {
-    this.clear()
-    this.ctx.globalAlpha = 1
-    Databus.bloomPass.threshold = 0.28;
-    Databus.bloomPass.strength = 1.5 //params.bloomStrength;
-    Databus.bloomPass.radius = 1;
-    let height = screenHeight
-    //height = screenHeight * (Math.cos(Math.PI / 180 * degree) * 0.2 + 1.2)
-    let width = height / ENTRY_HEIGHT * ENTRY_WIDTH
-    this.ctx.drawImage(entry, (screenWidth - width) / 2, (screenHeight - height) / 2, width, height)
-    console.log(1)
-    ++degree
   }
 
 
