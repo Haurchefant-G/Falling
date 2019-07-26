@@ -14,9 +14,12 @@ class DataBus {
 
     this.pool = new Pool()
     this.touchpos = {x:0, y:0, z:0}
+    this.gameover = false
+    this.musicload = false
+    this.musicready = false
     //this.target = 1
 
-    this.reset()
+    //this.reset()
   }
 
   reset() {
@@ -25,6 +28,8 @@ class DataBus {
     this.combo      = 0
 
     this.gameover = false
+    this.musicload = true
+    this.musicready = false
 
     this.musicname = ''
     this.keynum = 0
