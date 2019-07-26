@@ -43,7 +43,7 @@ let cameraAspect
 var params = {
   exposure: 0.8,
   bloomStrength:  1.5,
-  bloomThreshold: 0.28,
+  bloomThreshold: 0.29,
   bloomRadius: 1
 }
 
@@ -59,6 +59,8 @@ export default class Main {
     uiscene = new THREE.Scene()
     this.music = new Music()
     Databus.scene = scene
+
+    Databus.bgm = false
 
     renderer = new THREE.WebGLRenderer({ context: ctx, canvas: canvas, alpha:true })
 
@@ -113,6 +115,7 @@ export default class Main {
     bloomPass.strength = params.bloomStrength;
     bloomPass.radius = params.bloomRadius;
     Databus.bloomPass = bloomPass
+    console.log(bloomPass)
 
     composer = new THREE.EffectComposer(renderer);
     composer.addPass(renderScene);
@@ -140,10 +143,46 @@ export default class Main {
   }
 
   entry() {
-    Databus.updateUI = ui.entryUI.bind(ui)
-    Databus.touchstart = ui.entrytomenu.bind(ui)
-    wx.onTouchStart(Databus.touchstart)
+    Databus.updateUI = ui.originUI.bind(ui)
+    this.downloadbgm()
     this.loop()
+  }
+
+  downloadbgm() {
+    let that = this
+    fs.access({
+      path: `${wx.env.USER_DATA_PATH}/` +'bgm.mp3',
+      success() {
+        that.music.setTitleBgm(`${wx.env.USER_DATA_PATH}/` + 'bgm.mp3')
+        Databus.bgm = true
+        that.music.playTitleBgm()
+      },
+      fail(res) {
+        wx.downloadFile({
+          url: 'https://haurchefant-g.github.io/mp3/' + 'bgm.mp3', //音乐文件
+          filePath: `${wx.env.USER_DATA_PATH}/` + 'bgm.mp3',
+          success(res) {
+            // 只要服务器有响应数据，就会把响应内容写入文件并进入 success 回调，业务需要自行判断是否下载到了想要的内容
+            if (res.statusCode === 200) {
+              that.music.setTitleBgm(res.filePath)
+              Databus.bgm = true
+              that.music.playTitleBgm()
+            } else {
+              that.aniId = window.requestAnimationFrame(
+                that.waitformusic.bind(that),
+                canvas
+              )
+            }
+          },
+          fail() {
+            that.aniId = window.requestAnimationFrame(
+              that.waitformusic.bind(that),
+              canvas
+            )
+          }
+        })
+      }
+    })
   }
 
   loadUI() {
@@ -166,9 +205,10 @@ export default class Main {
       Databus.onHide = this.pause.bind(this)
       wx.onHide(Databus.onHide)
       bloomPass.threshold = 0
-      bloomPass.strength = 2
-      bloomPass.radius = params.bloomRadius;
+      bloomPass.strength = 1.5
+      bloomPass.radius = 0.5
       Databus.updateUI()
+      this.music.pauseTitleBgm()
       this.music.resetBgm()
       window.setTimeout(this.music.playBgm.bind(this.music), 2000)
       clock.start()
@@ -374,9 +414,9 @@ export default class Main {
     this.music.pauseBgm()
     let delta = clock.pause()
     Databus.updateUI = ui.pauseUI.bind(ui)
-    bloomPass.threshold = 0.28
-    bloomPass.strength = 1.5
-    bloomPass.radius = params.bloomRadius;
+    bloomPass.threshold = params.bloomThreshold
+    bloomPass.strength = params.bloomStrength
+    bloomPass.radius = params.bloomRadius
     this.update(delta)
     this.render()
 
@@ -403,10 +443,11 @@ export default class Main {
 
   returnmenu() {
     wx.offHide(Databus.onHide)
-    bloomPass.threshold = 0.28
-    bloomPass.strength = 1.5
+    bloomPass.threshold = params.bloomThreshold
+    bloomPass.strength = params.bloomStrength
     bloomPass.radius = params.bloomRadius
     Databus.reset()
+    this.music.playTitleBgm()
     this.aniId = window.requestAnimationFrame(
       this.loop.bind(this),
       canvas

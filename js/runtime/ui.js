@@ -142,6 +142,9 @@ export default class UI {
   }
 
   toscoreUI() {
+    Databus.bloomPass.threshold = 0
+    Databus.bloomPass.strength = 2
+    Databus.bloomPass.radius = 1
     wx.offTouchStart(Databus.touchstart)
     Databus.touchstart = this.scoretouch.bind(this)
     wx.onTouchStart(Databus.touchstart)
@@ -213,6 +216,32 @@ export default class UI {
       Databus.updateUI = this.tomenuUI.bind(this)
       Databus.returnmenu()
     }
+  }
+
+  originUI() {
+    this.clear()
+    let height = screenHeight * (Math.cos(Math.PI / 180 * degree) * 0.2 + 1.2)
+    let width = height / ENTRY_HEIGHT * ENTRY_WIDTH
+    this.ctx.drawImage(entry, (screenWidth - width) / 2, (screenHeight - height) / 2, width, height)
+
+    height = screenHeight * HALO_HEIGHT / ENTRY_HEIGHT
+    width = height
+    this.ctx.translate(screenWidth / 2, screenHeight / 2)
+    this.ctx.rotate(Math.PI / 180 * degree)
+    this.ctx.translate(- screenWidth / 2, - screenHeight / 2)
+    this.ctx.globalAlpha = Math.cos(1.5 * Math.PI / 180 * degree) * 0.2 + 0.7
+    this.ctx.drawImage(halo, (screenWidth - width) / 2, (screenHeight - height) / 2, width, height)
+    this.ctx.translate(screenWidth / 2, screenHeight / 2)
+    this.ctx.rotate(-Math.PI / 180 * degree)
+    this.ctx.translate(- screenWidth / 2, - screenHeight / 2)
+
+    ++degree
+    if (Databus.bgm) {
+      Databus.touchstart = this.entrytomenu.bind(this)
+      wx.onTouchStart(Databus.touchstart)
+      Databus.updateUI = this.entryUI.bind(this)
+    }
+
   }
 
 
@@ -516,6 +545,7 @@ export default class UI {
     this.ctx.fillText(Databus.score, screenWidth * 0.5, 40)
     this.ctx.globalAlpha = (100 - frame) / 100
     this.ctx.fillText("Beat the falling object on the loop", screenWidth / 2, screenHeight * 0.3)
+    Databus.loopmesh.rotation.y += 0.01
     this.ctx.globalAlpha = 1
   }
 
