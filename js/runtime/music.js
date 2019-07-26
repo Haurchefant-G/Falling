@@ -12,10 +12,18 @@ export default class Music {
 
     this.bgmAudio = new Audio()
     //this.bgmAudio.loop = true
-    this.bgmAudio.src = 'audio/standalonebeatmasta.mp3'
+    this.bgmAudio.src = null
   }
 
   playBgm() {
     this.bgmAudio.play()
+  }
+
+  setBgm(url) {
+    this.bgmAudio.src = url
+  }
+
+  pauseBgm() {
+    this.bgmAudio.pause()
   }
 }
