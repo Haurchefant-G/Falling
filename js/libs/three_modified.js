@@ -1,8 +1,4 @@
-/* 添加了THREEjs官方提供的一些拓展功能
-   在此基础上改写了部分功能 
-*/
-
-import * as THREE from './libs/three'
+import * as THREE from 'three'
 
 /**
  * Loads a Wavefront .mtl file specifying materials

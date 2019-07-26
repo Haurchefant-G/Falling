@@ -26,8 +26,4 @@ export default class Music {
   pauseBgm() {
     this.bgmAudio.pause()
   }
-
-  resetBgm() {
-    this.bgmAudio.currentTime = 0
-  }
 }
