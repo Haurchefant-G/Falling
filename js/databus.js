@@ -13,6 +13,8 @@ class DataBus {
     instance = this
 
     this.pool = new Pool()
+    this.touchpos = {x:0, y:0, z:0}
+    //this.target = 1
 
     this.reset()
   }
@@ -20,6 +22,7 @@ class DataBus {
   reset() {
     this.frame      = 0
     this.score      = 0
+    this.combo      = 0
 
     this.gameover = false
 
