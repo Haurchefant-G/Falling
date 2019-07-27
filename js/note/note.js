@@ -1,9 +1,9 @@
 import Databus    from '../databus'
 
 const advanceTime = 2000
-const Miss = 5
-const Perfect =  5
-const Good =  10
+const Miss = 15
+const Perfect =  10
+const Good =  20
 
 function notemessageUpdater() {
   var i = 0

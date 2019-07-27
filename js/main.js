@@ -10,8 +10,6 @@ require('./libs/weapp-adapter.js')
 let ctx = canvas.getContext('webgl', { antialias: true, preserveDrawingBuffer: true })
 Databus.canvas = canvas
 
-console.log(canvas)
-
 let fs = wx.getFileSystemManager()
 
 let renderer
@@ -63,10 +61,17 @@ export default class Main {
     Databus.bgm = false
 
     renderer = new THREE.WebGLRenderer({ context: ctx, canvas: canvas, alpha:true })
+    console.log(canvas)
 
-    winWidth = canvas.width
-    winHeight = canvas.height
+    //winWidth = (canvas.width > canvas.height) ? canvas.width : canvas.height
+    //winHeight = (canvas.width > canvas.height) ? canvas.height : canvas.width
+    winWidth = window.innerWidth
+    winHeight = window.innerHeight
+    console.log(window.innerWidth)
+    console.log(window.innerHeight)
     cameraAspect = winWidth / winHeight
+    console.log(winWidth)
+    console.log(winHeight)
 
     loopY = Math.round(-120 / cameraAspect * 0.6)
     fallstartY = Math.round(120 / cameraAspect * 3)
@@ -75,7 +80,7 @@ export default class Main {
 
     Databus.loopY = loopY
   
-    renderer.setPixelRatio(window.devicePixelRatio)
+    //renderer.setPixelRatio(window.devicePixelRatio)
     renderer.toneMapping = THREE.ReinhardToneMapping
     //THREE.NoToneMapping
     //THREE.LinearToneMapping
@@ -93,7 +98,8 @@ export default class Main {
     controls.enableRotate = false
     camera.lookAt(0, 0, 0)
     
-    this.load()
+    //this.load()
+    this.remoteload()
     this.loadUI()
 
     // 添加环境光
@@ -115,15 +121,11 @@ export default class Main {
     bloomPass.strength = params.bloomStrength;
     bloomPass.radius = params.bloomRadius;
     Databus.bloomPass = bloomPass
-    console.log(bloomPass)
 
     composer = new THREE.EffectComposer(renderer);
     composer.addPass(renderScene);
     composer.addPass(renderUIScene);
     composer.addPass(bloomPass);
-    console.log(composer)
-    console.log(renderer)
-    console.log(scene)
 
     //计时器
     clock = new Clock()
@@ -144,6 +146,12 @@ export default class Main {
 
   entry() {
     Databus.updateUI = ui.originUI.bind(ui)
+    let that = this
+    wx.onShow(function() {
+      if (!Databus.musicready) {
+        that.music.playTitleBgm()
+      }
+    })
     this.downloadbgm()
     this.loop()
   }
@@ -226,9 +234,28 @@ export default class Main {
 
   load() {
     var temp = this.render.bind(this)
-    let mtl = fs.readFileSync('/objs/scene.mtl', 'utf-8')
-    let obj = fs.readFileSync('/objs/scene.obj', 'utf-8')
+    let mtl = fs.readFileSync('objs/scene.mtl', 'utf-8')
+    console.log(mtl.length)
+    let obj = fs.readFileSync('objs/scene.obj', 'utf-8')
+    console.log(obj.length)
     THREE.packagefileloader(mtl, obj, function (object) {
+      console.log(object)
+      Databus.goodmesh = object.children[3].clone()
+      Databus.badmesh = object.children[4].clone()
+      Databus.wonderfulmesh = object.children[6].clone()
+      Databus.missmesh = object.children[5].clone()
+      Databus.note1mesh = object.children[1].clone()
+      Databus.note2mesh = object.children[2].clone()
+      Databus.loopmesh = object.children[0].clone()
+      Databus.loopmesh.scale.set(1.25, 1.25, 1.25)
+      Databus.loopmesh.position.y = loopY
+      preLoadDone = true
+    })
+  }
+
+  remoteload() {
+    THREE.loader('https://haurchefant-g.github.io/objs/scene.mtl', 'https://haurchefant-g.github.io/objs/scene.obj',function (object) {
+      console.log(object)
       Databus.goodmesh = object.children[3].clone()
       Databus.badmesh = object.children[4].clone()
       Databus.wonderfulmesh = object.children[6].clone()
@@ -316,6 +343,7 @@ export default class Main {
   playnotelist() {
     let nowtime = clock.getElapsedTime()
     if(nowtime > Databus.musictime + 2000) {
+      wx.offHide(Databus.onHide)
       Databus.gameover = true
       Databus.clear()
       Databus.updateUI = ui.toscoreUI.bind(ui)
@@ -411,6 +439,7 @@ export default class Main {
   pause() {
     window.cancelAnimationFrame(this.aniId)
     wx.offHide(Databus.onHide)
+    wx.offHide(Databus.onHide)
     this.music.pauseBgm()
     let delta = clock.pause()
     Databus.updateUI = ui.pauseUI.bind(ui)
@@ -418,21 +447,25 @@ export default class Main {
     bloomPass.strength = params.bloomStrength
     bloomPass.radius = params.bloomRadius
     this.update(delta)
-    this.render()
-
+    this.aniId = window.requestAnimationFrame(
+      this.render.bind(this),
+      canvas
+    )
   }
 
   restart() {
+    window.cancelAnimationFrame(this.aniId)
     wx.offHide(Databus.onHide)
     this.music.resetBgm()
     this.loop()
   }
 
   continue() {
+    window.cancelAnimationFrame(this.aniId)
     wx.onHide(Databus.onHide)
     bloomPass.threshold = 0
-    bloomPass.strength = 2
-    bloomPass.radius = params.bloomRadius
+    bloomPass.strength = 1.5
+    bloomPass.radius = 0.5
     clock.continue()
     this.music.playBgm()
     this.aniId = window.requestAnimationFrame(
@@ -442,6 +475,7 @@ export default class Main {
   }
 
   returnmenu() {
+    window.cancelAnimationFrame(this.aniId)
     wx.offHide(Databus.onHide)
     bloomPass.threshold = params.bloomThreshold
     bloomPass.strength = params.bloomStrength

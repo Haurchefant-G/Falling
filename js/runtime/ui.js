@@ -76,6 +76,10 @@ const LINE2_IMG_SRC = 'image/line2.png'
 const LINE2_WIDTH = 1185
 const LINE2_HEIGHT = 14
 
+const LOADING_IMG_SRC = 'image/loading.png'
+const LOADING_WIDTH = 297
+const LOADING_HEIGHT = 45
+
 
 var entry = new Image()
 entry.src = ENTRY_IMG_SRC
@@ -111,6 +115,8 @@ let MENU2 = new Image()
 MENU2.src = MENU2_IMG_SRC
 var line2 = new Image()
 line2.src = LINE2_IMG_SRC
+var loading = new Image()
+loading.src = LOADING_IMG_SRC
 
 const MUSICLIST = [
   { name: 'chinax', keynum: 4, level: 'hd' },
@@ -234,6 +240,11 @@ export default class UI {
     this.ctx.translate(screenWidth / 2, screenHeight / 2)
     this.ctx.rotate(-Math.PI / 180 * degree)
     this.ctx.translate(- screenWidth / 2, - screenHeight / 2)
+
+    height = height * 0.08
+    width = height / LOADING_HEIGHT * LOADING_WIDTH
+    this.ctx.globalAlpha = 1
+    this.ctx.drawImage(loading, (screenWidth - width) / 2, (screenHeight - height) / 2, width, height) 
 
     ++degree
     if (Databus.bgm) {
@@ -527,6 +538,11 @@ export default class UI {
     this.ctx.translate(screenWidth / 2, screenHeight / 2)
     this.ctx.rotate(-Math.PI / 180 * degree)
     this.ctx.translate(- screenWidth / 2, - screenHeight / 2)
+
+    height = height * 0.08
+    width = height / LOADING_HEIGHT * LOADING_WIDTH
+    this.ctx.globalAlpha = 1
+    this.ctx.drawImage(loading, (screenWidth - width) / 2, (screenHeight - height) / 2, width, height) 
     ++degree
     if(Databus.musicready) {
       frame = 0

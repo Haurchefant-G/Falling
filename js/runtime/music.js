@@ -15,10 +15,10 @@ export default class Music {
     //this.bgmAudio.loop = true
     this.bgmAudio.src = null
     this.titlebgmAudio.src = null
+    this.bgmAudio.loop = false
   }
 
   playBgm() {
-    this.titlebgmAudio.pause()
     this.bgmAudio.play()
   }
 
