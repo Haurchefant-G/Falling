@@ -1,52 +1,35 @@
-//import Player     from './player/index'
-//import Enemy      from './npc/enemy'
-//import BackGround from './runtime/background'
-//import GameInfo   from './runtime/gameinfo'
-import Music      from './runtime/music'
-import Databus    from './databus'
-import THREE      from './libs/three_modified'
-import UI         from './runtime/ui'
-import ObjsURL    from '../objs/url'
-import NOTE       from './note/note'
-import Clock       from './base/clock'
-
-
-//import { EffectComposer } from './libs/EffectComposer'
-//import { RenderPass } from './libs/RenderPass'
-//import { UnrealBloomPass } from './libs/UnrealBloomPass'
-
+import Music from './runtime/music'
+import Databus from './databus'
+import THREE from './three_modified'
+import UI from './runtime/ui'
+import NOTE from './note/note'
+import Clock from './clock/clock'
 
 require('./libs/weapp-adapter.js')
 
-
-let ctx = canvas.getContext('webgl', { antialias: true, preserveDrawingBuffer: true })
+const ctx = canvas.getContext('webgl', { antialias: true, preserveDrawingBuffer: true })
 Databus.canvas = canvas
 
-let fs = wx.getFileSystemManager()
+const fs = wx.getFileSystemManager()
 
 let renderer
-console.log(wx.env.USER_DATA_PATH)
 let preLoadDone = false
-let gaming = false
 let scene
 let camera
 
-let ui = new UI()
+const ui = new UI()
 let uiscene
 let uicamera
 
+let fallstartY // 打击音符开始下落的高度y
+let loopY // 判定环的y坐标
+let startRadius // 打击音符开始下落相对y轴的距离
+let endRadius // 打击音符结束下落相对y轴的距离
 
-let fallstartY     //打击音符开始下落的高度y
-let loopY       //判定环的y坐标
-let startRadius //打击音符开始下落相对y轴的距离
-let endRadius     //打击音符结束下落相对y轴的距离
-
-
-  
 let composer
 let bloomPass
 let clock
-let controls;
+let controls
 let raycaster
 
 let winWidth
@@ -55,20 +38,18 @@ let cameraAspect
 
 var params = {
   exposure: 0.8,
-  bloomStrength:  1.5,
+  bloomStrength: 1.5,
   bloomThreshold: 0.29,
   bloomRadius: 1
 }
-
 
 /**
  * 游戏主函数
  */
 export default class Main {
-  constructor() {
+  constructor () {
     // 维护当前requestAnimationFrame的id
-    this.aniId    = 0
-    //this.gameinfo = new GameInfo()
+    this.aniId = 0
     scene = new THREE.Scene()
     uiscene = new THREE.Scene()
     this.music = new Music()
@@ -76,11 +57,11 @@ export default class Main {
 
     Databus.bgm = false
 
-    renderer = new THREE.WebGLRenderer({ context: ctx, canvas: canvas, alpha:true })
+    renderer = new THREE.WebGLRenderer({ context: ctx, canvas: canvas, alpha: true })
     console.log(canvas)
 
-    //winWidth = (canvas.width > canvas.height) ? canvas.width : canvas.height
-    //winHeight = (canvas.width > canvas.height) ? canvas.height : canvas.width
+    // winWidth = (canvas.width > canvas.height) ? canvas.width : canvas.height
+    // winHeight = (canvas.width > canvas.height) ? canvas.height : canvas.width
     winWidth = window.innerWidth
     winHeight = window.innerHeight
     console.log(window.innerWidth)
@@ -95,103 +76,96 @@ export default class Main {
     endRadius = 100
 
     Databus.loopY = loopY
-    
 
-    //renderer.setSize(winWidth, winHeight)
-    renderer.setPixelRatio(window.devicePixelRatio)
+    // renderer.setPixelRatio(window.devicePixelRatio)
     renderer.toneMapping = THREE.ReinhardToneMapping
-    //THREE.NoToneMapping
-    //THREE.LinearToneMapping
-    //THREE.ReinhardToneMapping
-    //THREE.Uncharted2ToneMapping
-    //THREE.CineonToneMapping
+    // THREE.NoToneMapping
+    // THREE.LinearToneMapping
+    // THREE.ReinhardToneMapping
+    // THREE.Uncharted2ToneMapping
+    // THREE.CineonToneMapping
 
-    console.log("屏幕尺寸: " + winWidth + " x " + winHeight)
-
-
-    uicamera = new THREE.OrthographicCamera(-winWidth/2, winWidth/2, winHeight/2, -winHeight / 2, 1, 100000)
+    uicamera = new THREE.OrthographicCamera(-winWidth / 2, winWidth / 2, winHeight / 2, -winHeight / 2, 1, 100000)
     uicamera.position.set(0, 0, 50)
-	  camera = new THREE.OrthographicCamera(-120, 120, 120 / cameraAspect, -120 / cameraAspect,1,100000)
+	  camera = new THREE.OrthographicCamera(-120, 120, 120 / cameraAspect, -120 / cameraAspect, 1, 100000)
     camera.position.set(0, 120 / cameraAspect * 0.5, 160)
     Databus.camera = camera
-
-    //camera.position.set(0, 0, -160)
-	  //camera = new THREE.PerspectiveCamera(75, cameraAspect, 1, 100000)
-    //console.log(camera)
 
     controls = new THREE.OrbitControls(camera)
     controls.enableRotate = false
     camera.lookAt(0, 0, 0)
-    
-    //this.load()
+
+    // this.load()
     this.remoteload()
     this.loadUI()
 
     // 添加环境光
-    let ambientLight = new THREE.AmbientLight(0x999999)
+    const ambientLight = new THREE.AmbientLight(0x999999)
     scene.add(ambientLight)
 
     // 添加投射光
-    var directionalLight = new THREE.DirectionalLight(0xffffff)//0xcccccc);
-    directionalLight.position.set(0, 1200, 1000).normalize();
-    scene.add(directionalLight);
+    var directionalLight = new THREE.DirectionalLight(0xffffff)// 0xcccccc);
+    directionalLight.position.set(0, 1200, 1000).normalize()
+    scene.add(directionalLight)
 
-    var renderScene = new THREE.RenderPass(scene, camera);
-    //renderScene.clear = false
-    var renderUIScene = new THREE.RenderPass(uiscene, uicamera);
+    var renderScene = new THREE.RenderPass(scene, camera)
+    var renderUIScene = new THREE.RenderPass(uiscene, uicamera)
     renderUIScene.clear = false
 
-    //辉光特效
-    bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(winWidth, winHeight), 1.5, 0.4, 0.85);
-    bloomPass.threshold = params.bloomThreshold;
-    bloomPass.strength = params.bloomStrength;
-    bloomPass.radius = params.bloomRadius;
+    // 辉光特效
+    bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(winWidth, winHeight), 1.5, 0.4, 0.85)
+    bloomPass.threshold = params.bloomThreshold
+    bloomPass.strength = params.bloomStrength
+    bloomPass.radius = params.bloomRadius
     Databus.bloomPass = bloomPass
 
-    composer = new THREE.EffectComposer(renderer);
-    composer.addPass(renderScene);
-    composer.addPass(renderUIScene);
-    composer.addPass(bloomPass);
+    composer = new THREE.EffectComposer(renderer)
+    composer.addPass(renderScene)
+    composer.addPass(renderUIScene)
+    composer.addPass(bloomPass)
 
-    //计时器
+    // 计时器
     clock = new Clock()
     wx.setPreferredFramesPerSecond(60)
 
-    //点击获取物体
+    // 点击获取物体
     raycaster = new THREE.Raycaster()
     Databus.raycaster = raycaster
-    //console.log(raycaster)
-    //this.initRaycaster()
+
+    Databus.pause = this.pause.bind(this)
+    Databus.continue = this.continue.bind(this)
+    Databus.returnmenu = this.returnmenu.bind(this)
+    Databus.restart = this.restart.bind(this)
+
     this.entry()
   }
 
-  entry() {
+  entry () {
     Databus.updateUI = ui.originUI.bind(ui)
-    let that = this
-    wx.onShow(function() {
+    const that = this
+    wx.onShow(function () {
       if (!Databus.musicready) {
         that.music.playTitleBgm()
       }
     })
     this.downloadbgm()
     this.loop()
-
   }
 
-  downloadbgm() {
-    let that = this
+  downloadbgm () {
+    const that = this
     fs.access({
-      path: `${wx.env.USER_DATA_PATH}/` +'bgm.mp3',
-      success() {
+      path: `${wx.env.USER_DATA_PATH}/` + 'bgm.mp3',
+      success () {
         that.music.setTitleBgm(`${wx.env.USER_DATA_PATH}/` + 'bgm.mp3')
         Databus.bgm = true
         that.music.playTitleBgm()
       },
-      fail(res) {
+      fail (res) {
         wx.downloadFile({
-          url: 'https://haurchefant-g.github.io/mp3/' + 'bgm.mp3', //音乐文件
+          url: 'https://haurchefant-g.github.io/mp3/' + 'bgm.mp3', // 音乐文件
           filePath: `${wx.env.USER_DATA_PATH}/` + 'bgm.mp3',
-          success(res) {
+          success (res) {
             // 只要服务器有响应数据，就会把响应内容写入文件并进入 success 回调，业务需要自行判断是否下载到了想要的内容
             if (res.statusCode === 200) {
               that.music.setTitleBgm(res.filePath)
@@ -204,7 +178,7 @@ export default class Main {
               )
             }
           },
-          fail() {
+          fail () {
             that.aniId = window.requestAnimationFrame(
               that.waitformusic.bind(that),
               canvas
@@ -215,7 +189,7 @@ export default class Main {
     })
   }
 
-  loadUI() {
+  loadUI () {
     this.texture = new THREE.CanvasTexture(ui.canvas)
     this.texture.needsUpdate = true
     this.texture.minFilter = THREE.LinearFilter
@@ -226,13 +200,7 @@ export default class Main {
     uiscene.add(this.uiplane)
   }
 
-  restart() {
-    Databus.reset()
-    // 清除上一局的动画
-    this.waitforloop()
-  }
-
-  waitformusic() {
+  waitformusic () {
     if (preLoadDone && Databus.musicready) {
       window.cancelAnimationFrame(this.aniId)
       this.loadimd()
@@ -250,7 +218,6 @@ export default class Main {
       clock.start()
       this.loop()
     } else {
-      //this.render()
       this.texture.needsUpdate = true
       Databus.updateUI()
       composer.render()
@@ -261,11 +228,11 @@ export default class Main {
     }
   }
 
-  load() {
+  load () {
     var temp = this.render.bind(this)
-    let mtl = fs.readFileSync('objs/scene.mtl', 'utf-8')
+    const mtl = fs.readFileSync('objs/scene.mtl', 'utf-8')
     console.log(mtl.length)
-    let obj = fs.readFileSync('objs/scene.obj', 'utf-8')
+    const obj = fs.readFileSync('objs/scene.obj', 'utf-8')
     console.log(obj.length)
     THREE.packagefileloader(mtl, obj, function (object) {
       console.log(object)
@@ -282,8 +249,8 @@ export default class Main {
     })
   }
 
-  remoteload() {
-    THREE.loader('https://haurchefant-g.github.io/objs/scene.mtl', 'https://haurchefant-g.github.io/objs/scene.obj',function (object) {
+  remoteload () {
+    THREE.loader('https://haurchefant-g.github.io/objs/scene.mtl', 'https://haurchefant-g.github.io/objs/scene.obj', function (object) {
       console.log(object)
       Databus.goodmesh = object.children[3].clone()
       Databus.badmesh = object.children[4].clone()
@@ -294,23 +261,21 @@ export default class Main {
       Databus.loopmesh = object.children[0].clone()
       Databus.loopmesh.scale.set(1.25, 1.25, 1.25)
       Databus.loopmesh.position.y = loopY
-      //scene.add(databus.loopmesh)
-      //temp()
       preLoadDone = true
     })
   }
 
-  downloadmusic() {
-    let that = this
+  downloadmusic () {
+    const that = this
     fs.access({
       path: `${wx.env.USER_DATA_PATH}/` + Databus.musicname + '.mp3',
       success () {
         that.music.setBgm(`${wx.env.USER_DATA_PATH}/` + Databus.musicname + '.mp3')
         Databus.musicready = true
       },
-      fail(res) {
+      fail (res) {
         wx.downloadFile({
-          url: 'https://haurchefant-g.github.io/mp3/' + Databus.musicname + '.mp3', //音乐文件
+          url: 'https://haurchefant-g.github.io/mp3/' + Databus.musicname + '.mp3', // 音乐文件
           filePath: `${wx.env.USER_DATA_PATH}/` + Databus.musicname + '.mp3',
           success (res) {
             // 只要服务器有响应数据，就会把响应内容写入文件并进入 success 回调，业务需要自行判断是否下载到了想要的内容
@@ -321,26 +286,24 @@ export default class Main {
               that.aniId = window.requestAnimationFrame(
                 that.waitformusic.bind(that),
                 canvas
-                )
+              )
             }
           },
           fail () {
             that.aniId = window.requestAnimationFrame(
               that.waitformusic.bind(that),
               canvas
-              )
+            )
           }
         })
-
       }
     })
   }
 
-  //加载谱面文件
-  loadimd() {
-    var imd = fs.readFileSync('/bin/' + Databus.musicname + '_' + Databus.keynum + 'k_' + Databus.level + '.bin') //,'binary')
+  // 加载谱面文件
+  loadimd () {
+    var imd = fs.readFileSync('/bin/' + Databus.musicname + '_' + Databus.keynum + 'k_' + Databus.level + '.bin') //, 'binary')
     Databus.shiftdegree = 180 / Databus.keynum
-
     imd = new DataView(imd)
     var index = 0
     Databus.musictime = imd.getInt32(index, true)
@@ -350,35 +313,31 @@ export default class Main {
     index += 4
     for (let i = 0; i < flickernum; ++i, index += 12) {
       Databus.BPMlist.push({
-        'time': imd.getInt32(index, true), 
-        'BPM': imd.getFloat64(index + 4, true)
+        time: imd.getInt32(index, true),
+        BPM: imd.getFloat64(index + 4, true)
       })
     }
     index += 2
-    let notenum = imd.getInt32(index, true)
+    const notenum = imd.getInt32(index, true)
     Databus.notenum = notenum
     index += 4
     for (let i = 0; i < notenum; ++i, index += 11) {
       Databus.notelist.push({
-        'type': imd.getInt16(index, true),
-        'time': imd.getInt32(index + 2, true), 
-        'key': imd.getInt8(index + 6, true),
-        'parameter': imd.getInt32(index + 7, true)
+        type: imd.getInt16(index, true),
+        time: imd.getInt32(index + 2, true),
+        key: imd.getInt8(index + 6, true),
+        parameter: imd.getInt32(index + 7, true)
       })
     }
-    //console.log(imd)
-    //console.log(databus.BPMlist)
-    //console.log(databus.notelist)
   }
 
-
-  flicker() {
-    
+  flicker () {
+    // 待拓展
   }
 
-  playnotelist() {
-    let nowtime = clock.getElapsedTime()
-    if(nowtime > Databus.musictime + 2000) {
+  playnotelist () {
+    const nowtime = clock.getElapsedTime()
+    if (nowtime > Databus.musictime + 2000) {
       wx.offHide(Databus.onHide)
       Databus.gameover = true
       Databus.clear()
@@ -388,7 +347,6 @@ export default class Main {
     while (Databus.notelist[0]) {
       createtime = Databus.notelist[0].time
       if (createtime <= nowtime) {
-        //console.log(nowtime)
         this.noteadd(Databus.notelist.shift(), createtime - nowtime)
       } else {
         break
@@ -396,14 +354,7 @@ export default class Main {
     }
   }
 
-  /*{
-  'type': imd.getInt16(index, true),
-    'time': imd.getInt32(index + 2, true),
-      'key': imd.getInt8(index + 6, true),
-        'parameter': imd.getInt32(index + 7, true)
-}*/
-
-  noteadd(data, delta = 0) {
+  noteadd (data, delta = 0) {
     if (data.type == 0) {
       var noteobj
       var arc = Math.PI / 180 * ((data.key + 0.5) * Databus.shiftdegree + 180)
@@ -428,52 +379,40 @@ export default class Main {
     }
   }
 
-  update(delta) {
+  update (delta) {
     // 更新代码
     this.texture.needsUpdate = true
     Databus.updateUI()
     if (Databus.musicready && !Databus.gameover) {
-      //console.log(this.rankinge)
       Databus.notemessage.forEach((message) => {
         message.update(camera.position)
       })
-      Databus.notemessage = Databus.notemessage.filter((message) => {return !message.dead})
+      Databus.notemessage = Databus.notemessage.filter((message) => { return !message.dead })
       Databus.notes.forEach((note) => {
-        //console.log(note)
-        switch(note.status) {
+        switch (note.status) {
           case 1: note.update(delta)
-          break
+            break
           case 2:
-          break
+            break
           case 3: note.fade()
-          break
+            break
         }
-        //console.log(note.position)
       })
-      //console.log(databus.notelist)
       Databus.notes = Databus.notes.filter((note) => { return (note.status !== 4) })
       this.playnotelist()
-      //console.log(databus.notes)
-    } else {
-      //console.log('FFF')
     }
   }
-
 
   /**
    * canvas 重绘函数
    * 每一帧重新绘制所有的需要展示的元素
    */
-  render() {
-    //renderer.clear();
-    //if (preLoadDone) {
+  render () {
     composer.render()
-      //renderer.render(scene, camera)
-    //}
   }
 
   // 实现帧循环
-  loop() {
+  loop () {
     const delta = clock.getDelta()
     this.update(delta)
     this.render()
@@ -487,16 +426,16 @@ export default class Main {
       this.aniId = window.requestAnimationFrame(
         this.loop.bind(this),
         canvas
-        )
+      )
     }
   }
 
-  pause() {
+  pause () {
     window.cancelAnimationFrame(this.aniId)
     wx.offHide(Databus.onHide)
     wx.offHide(Databus.onHide)
     this.music.pauseBgm()
-    let delta = clock.pause()
+    const delta = clock.pause()
     Databus.updateUI = ui.pauseUI.bind(ui)
     bloomPass.threshold = params.bloomThreshold
     bloomPass.strength = params.bloomStrength
@@ -508,14 +447,14 @@ export default class Main {
     )
   }
 
-  restart() {
+  restart () {
     window.cancelAnimationFrame(this.aniId)
     wx.offHide(Databus.onHide)
     this.music.resetBgm()
     this.loop()
   }
 
-  continue() {
+  continue () {
     window.cancelAnimationFrame(this.aniId)
     wx.onHide(Databus.onHide)
     bloomPass.threshold = 0
@@ -526,10 +465,10 @@ export default class Main {
     this.aniId = window.requestAnimationFrame(
       this.loop.bind(this),
       canvas
-      )
+    )
   }
 
-  returnmenu() {
+  returnmenu () {
     window.cancelAnimationFrame(this.aniId)
     wx.offHide(Databus.onHide)
     bloomPass.threshold = params.bloomThreshold
@@ -540,8 +479,6 @@ export default class Main {
     this.aniId = window.requestAnimationFrame(
       this.loop.bind(this),
       canvas
-      )
+    )
   }
 }
-
-
