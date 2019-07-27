@@ -1,11 +1,23 @@
+//import Player     from './player/index'
+//import Enemy      from './npc/enemy'
+//import BackGround from './runtime/background'
+//import GameInfo   from './runtime/gameinfo'
 import Music      from './runtime/music'
 import Databus    from './databus'
-import THREE      from './three_modified'
+import THREE      from './libs/three_modified'
 import UI         from './runtime/ui'
+import ObjsURL    from '../objs/url'
 import NOTE       from './note/note'
-import Clock       from './clock/clock'
+import Clock       from './base/clock'
+
+
+//import { EffectComposer } from './libs/EffectComposer'
+//import { RenderPass } from './libs/RenderPass'
+//import { UnrealBloomPass } from './libs/UnrealBloomPass'
+
 
 require('./libs/weapp-adapter.js')
+
 
 let ctx = canvas.getContext('webgl', { antialias: true, preserveDrawingBuffer: true })
 Databus.canvas = canvas
@@ -13,7 +25,9 @@ Databus.canvas = canvas
 let fs = wx.getFileSystemManager()
 
 let renderer
+console.log(wx.env.USER_DATA_PATH)
 let preLoadDone = false
+let gaming = false
 let scene
 let camera
 
@@ -28,6 +42,7 @@ let startRadius //打击音符开始下落相对y轴的距离
 let endRadius     //打击音符结束下落相对y轴的距离
 
 
+  
 let composer
 let bloomPass
 let clock
@@ -53,6 +68,7 @@ export default class Main {
   constructor() {
     // 维护当前requestAnimationFrame的id
     this.aniId    = 0
+    //this.gameinfo = new GameInfo()
     scene = new THREE.Scene()
     uiscene = new THREE.Scene()
     this.music = new Music()
@@ -79,8 +95,10 @@ export default class Main {
     endRadius = 100
 
     Databus.loopY = loopY
-  
-    //renderer.setPixelRatio(window.devicePixelRatio)
+    
+
+    //renderer.setSize(winWidth, winHeight)
+    renderer.setPixelRatio(window.devicePixelRatio)
     renderer.toneMapping = THREE.ReinhardToneMapping
     //THREE.NoToneMapping
     //THREE.LinearToneMapping
@@ -88,11 +106,18 @@ export default class Main {
     //THREE.Uncharted2ToneMapping
     //THREE.CineonToneMapping
 
+    console.log("屏幕尺寸: " + winWidth + " x " + winHeight)
+
+
     uicamera = new THREE.OrthographicCamera(-winWidth/2, winWidth/2, winHeight/2, -winHeight / 2, 1, 100000)
     uicamera.position.set(0, 0, 50)
 	  camera = new THREE.OrthographicCamera(-120, 120, 120 / cameraAspect, -120 / cameraAspect,1,100000)
     camera.position.set(0, 120 / cameraAspect * 0.5, 160)
     Databus.camera = camera
+
+    //camera.position.set(0, 0, -160)
+	  //camera = new THREE.PerspectiveCamera(75, cameraAspect, 1, 100000)
+    //console.log(camera)
 
     controls = new THREE.OrbitControls(camera)
     controls.enableRotate = false
@@ -112,6 +137,7 @@ export default class Main {
     scene.add(directionalLight);
 
     var renderScene = new THREE.RenderPass(scene, camera);
+    //renderScene.clear = false
     var renderUIScene = new THREE.RenderPass(uiscene, uicamera);
     renderUIScene.clear = false
 
@@ -134,13 +160,8 @@ export default class Main {
     //点击获取物体
     raycaster = new THREE.Raycaster()
     Databus.raycaster = raycaster
-
-
-    Databus.pause = this.pause.bind(this)
-    Databus.continue = this.continue.bind(this)
-    Databus.returnmenu = this.returnmenu.bind(this)
-    Databus.restart = this.restart.bind(this)
-
+    //console.log(raycaster)
+    //this.initRaycaster()
     this.entry()
   }
 
@@ -154,6 +175,7 @@ export default class Main {
     })
     this.downloadbgm()
     this.loop()
+
   }
 
   downloadbgm() {
@@ -204,6 +226,12 @@ export default class Main {
     uiscene.add(this.uiplane)
   }
 
+  restart() {
+    Databus.reset()
+    // 清除上一局的动画
+    this.waitforloop()
+  }
+
   waitformusic() {
     if (preLoadDone && Databus.musicready) {
       window.cancelAnimationFrame(this.aniId)
@@ -222,6 +250,7 @@ export default class Main {
       clock.start()
       this.loop()
     } else {
+      //this.render()
       this.texture.needsUpdate = true
       Databus.updateUI()
       composer.render()
@@ -265,6 +294,8 @@ export default class Main {
       Databus.loopmesh = object.children[0].clone()
       Databus.loopmesh.scale.set(1.25, 1.25, 1.25)
       Databus.loopmesh.position.y = loopY
+      //scene.add(databus.loopmesh)
+      //temp()
       preLoadDone = true
     })
   }
@@ -300,6 +331,7 @@ export default class Main {
               )
           }
         })
+
       }
     })
   }
@@ -308,6 +340,7 @@ export default class Main {
   loadimd() {
     var imd = fs.readFileSync('/bin/' + Databus.musicname + '_' + Databus.keynum + 'k_' + Databus.level + '.bin') //,'binary')
     Databus.shiftdegree = 180 / Databus.keynum
+
     imd = new DataView(imd)
     var index = 0
     Databus.musictime = imd.getInt32(index, true)
@@ -333,11 +366,14 @@ export default class Main {
         'parameter': imd.getInt32(index + 7, true)
       })
     }
+    //console.log(imd)
+    //console.log(databus.BPMlist)
+    //console.log(databus.notelist)
   }
 
 
   flicker() {
-    //待拓展
+    
   }
 
   playnotelist() {
@@ -352,12 +388,20 @@ export default class Main {
     while (Databus.notelist[0]) {
       createtime = Databus.notelist[0].time
       if (createtime <= nowtime) {
+        //console.log(nowtime)
         this.noteadd(Databus.notelist.shift(), createtime - nowtime)
       } else {
         break
       }
     }
   }
+
+  /*{
+  'type': imd.getInt16(index, true),
+    'time': imd.getInt32(index + 2, true),
+      'key': imd.getInt8(index + 6, true),
+        'parameter': imd.getInt32(index + 7, true)
+}*/
 
   noteadd(data, delta = 0) {
     if (data.type == 0) {
@@ -389,11 +433,13 @@ export default class Main {
     this.texture.needsUpdate = true
     Databus.updateUI()
     if (Databus.musicready && !Databus.gameover) {
+      //console.log(this.rankinge)
       Databus.notemessage.forEach((message) => {
         message.update(camera.position)
       })
       Databus.notemessage = Databus.notemessage.filter((message) => {return !message.dead})
       Databus.notes.forEach((note) => {
+        //console.log(note)
         switch(note.status) {
           case 1: note.update(delta)
           break
@@ -402,9 +448,14 @@ export default class Main {
           case 3: note.fade()
           break
         }
+        //console.log(note.position)
       })
+      //console.log(databus.notelist)
       Databus.notes = Databus.notes.filter((note) => { return (note.status !== 4) })
       this.playnotelist()
+      //console.log(databus.notes)
+    } else {
+      //console.log('FFF')
     }
   }
 
@@ -414,7 +465,11 @@ export default class Main {
    * 每一帧重新绘制所有的需要展示的元素
    */
   render() {
+    //renderer.clear();
+    //if (preLoadDone) {
     composer.render()
+      //renderer.render(scene, camera)
+    //}
   }
 
   // 实现帧循环

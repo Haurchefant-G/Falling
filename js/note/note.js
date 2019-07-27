@@ -1,4 +1,4 @@
-import Databus    from '../databus'
+import databus    from '../databus'
 
 const advanceTime = 2000
 const Miss = 15
@@ -8,12 +8,13 @@ const Good =  20
 function notemessageUpdater() {
   var i = 0
   return function (cameraposition) {
+    //this.lookAt(cameraposition)
     if (i < 18) {
       this.scale.x *= Math.pow(1.02, i)
       this.scale.y *= Math.pow(1.02, i)
       this.scale.z *= Math.pow(1.02, i)
     } else if (i > 80) {
-      Databus.scene.remove(this)
+      databus.scene.remove(this)
       this.dead = true
     } else if (i > 50) {
       this.scale.x *= 1.0
@@ -35,20 +36,23 @@ function clicknotetUpdater(arc, fallstartY, vertical, startRadius, endRadius) {
     this.rotation.y += 0.1
     if((fallstartY - this.position.y - vertical) > Miss) {
       this.status = 3
+      //console.log(this.position)
       var judgemessage
-      judgemessage = Databus.missmesh.clone()
+      judgemessage = databus.missmesh.clone()
       judgemessage.scale.set(0.05, 0.05, 0.05)
+      //console.log(judgemessage.scale.x + ' ' + judgemessage.scale.y + ' ' + judgemessage.scale.z)
       judgemessage.position.x = this.position.x
       judgemessage.position.y = this.position.y
       judgemessage.position.z = this.position.z
+      //judgemessage.lookAt(databus.camera.position)
       judgemessage.update = notemessageUpdater().bind(judgemessage)
-      Databus.notemessage.push(judgemessage)
-      Databus.scene.add(judgemessage)
-      Databus.resetcombo()
+      databus.notemessage.push(judgemessage)
+      databus.scene.add(judgemessage)
 
     }
   } 
 }
+
 
 function notetFadeUpdater() {
   return function() {
@@ -57,31 +61,31 @@ function notetFadeUpdater() {
     this.scale.z *= 0.92
     if (this.scale.x < 0.01) {
       this.status = 4
-      Databus.scene.remove(this)
+      databus.scene.remove(this)
     }
   } 
 }
 
 function notejudge(note) {
   var judgemessage
-  if (Math.abs(note.position.y - Databus.loopY) < Perfect) {
-    judgemessage = Databus.wonderfulmesh.clone()
-    Databus.score += 50 + Databus.combo * 4
-  } else if (Math.abs(note.position.y - Databus.loopY) < Good) {
-    judgemessage = Databus.goodmesh.clone()
-    Databus.score += 30 + Databus.combo * 2
+  if (Math.abs(note.position.y - databus.loopY) < Perfect) {
+    judgemessage = databus.wonderfulmesh.clone()
+    databus.score += 1000
+  } else if (Math.abs(note.position.y - databus.loopY) < Good) {
+    judgemessage = databus.goodmesh.clone()
+    databus.score += 700
   } else {
-    judgemessage = Databus.badmesh.clone()
-    Databus.score += 10 + Databus.combo
+    judgemessage = databus.badmesh.clone()
   }
   judgemessage.scale.set(0.05, 0.05, 0.05)
+  //console.log(judgemessage.scale.x + ' ' + judgemessage.scale.y + ' ' + judgemessage.scale.z)
   judgemessage.position.x = note.position.x
   judgemessage.position.y = note.position.y
   judgemessage.position.z = note.position.z
+  //judgemessage.lookAt(databus.camera.position)
   judgemessage.update = notemessageUpdater().bind(judgemessage)
-  Databus.notemessage.push(judgemessage)
-  Databus.scene.add(judgemessage)
-  ++Databus.combo
+  databus.notemessage.push(judgemessage)
+  databus.scene.add(judgemessage)
 }
 
 exports.clicknotetUpdater = clicknotetUpdater

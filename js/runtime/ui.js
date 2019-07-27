@@ -1,6 +1,6 @@
 import Databus from '../databus'
 import NOTE       from '../note/note'
-import THREE      from '../three_modified'
+import THREE      from '../libs/three_modified'
 
 const screenWidth = window.innerWidth
 const screenHeight = window.innerHeight  
@@ -124,7 +124,7 @@ const MUSICLIST = [
   { name: 'Identity4', keynum: 4, level: 'hd' },
   { name: 'standalonebeatmasta', keynum: 4, level: 'hd' }]
 
-let target = 0
+let target = 1
 
 let degree = 180
 let bgscale  = 1
@@ -169,59 +169,15 @@ export default class UI {
     this.ctx.drawImage(line, 0, height, screenWidth, LINE_HEIGHT)
     this.ctx.drawImage(line, 0, screenHeight - height - LINE_HEIGHT, screenWidth, LINE_HEIGHT)
 
-    height = screenHeight - height
-    this.ctx.drawImage(RESTART2, screenWidth * 0.05, height,  LINE_HEIGHT  / RESTART2_HEIGHT * RESTART2_WIDTH, LINE_HEIGHT)
-    this.ctx.drawImage(MENU2, screenWidth * 0.75, height,  LINE_HEIGHT  / MENU2_HEIGHT * MENU2_WIDTH, LINE_HEIGHT)
-
-    height = width / CIRCLE_WIDTH * CIRCLE_HEIGHT 
-    height = (screenHeight - height) * 0.5 + height * 0.20
     height = (height + screenHeight * 0.5) / 2   // height + 2 * LINE_HEIGHT
     this.ctx.drawImage(SCORE, screenWidth * 0.05, height, screenWidth * 0.2, screenWidth * 0.2 / SCORE_WIDTH * SCORE_HEIGHT)
     this.ctx.drawImage(COMBO, screenWidth * 0.75, height, screenWidth * 0.2, screenWidth * 0.2 / COMBO_WIDTH * COMBO_HEIGHT)
-    this.ctx.fillText(Databus.score, screenWidth * 0.15, screenHeight * 0.5)
-    this.ctx.fillText(Databus.maxcombo, screenWidth * 0.85, screenHeight * 0.5)
+    this.ctx.fillText(score, screenWidth * 0.15, screenHeight * 0.5)
+    this.ctx.fillText(combo, screenWidth * 0.85, screenHeight * 0.5)
 
     width = screenWidth * 0.5
     height = width / PATTERN_WIDTH * PATTERN_HEIGHT
     this.ctx.drawImage(pattern, 0, 0, width, height)
-
-    height = screenHeight * HALO_HEIGHT / ENTRY_HEIGHT * (Math.cos(2 * Math.PI / 180 * degree) * 0.3 + 0.7)
-    width = height
-    this.ctx.translate(screenWidth / 2, screenHeight / 2)
-    this.ctx.rotate(Math.PI / 180 * degree)
-    this.ctx.translate(- screenWidth / 2, - screenHeight / 2)
-    this.ctx.globalAlpha = Math.cos(1.5 * Math.PI / 180 * degree) * 0.2 + 0.7
-    this.ctx.drawImage(halo, (screenWidth - width) / 2, (screenHeight - height) / 2, width, height)
-    this.ctx.translate(screenWidth / 2, screenHeight / 2)
-    this.ctx.rotate(-Math.PI / 180 * degree)
-    this.ctx.translate(- screenWidth / 2, - screenHeight / 2)
-    ++degree
-  }
-
-  scoretouch(e){
-    e = e.touches[0]
-    let width = screenWidth * 0.65
-    let height = width / CIRCLE_WIDTH * CIRCLE_HEIGHT
-    height = (screenHeight - height) * 0.5 + height * 0.20
-    height = screenHeight - height
-    if((e.clientX > screenWidth * 0.05) &&
-    (e.clientX < screenWidth * 0.05 + LINE_HEIGHT  / RESTART2_HEIGHT * RESTART2_WIDTH) &&
-    (e.clientY > height) &&
-    (e.clientY < height + LINE_HEIGHT)) {
-      wx.offTouchStart(Databus.touchstart)
-      Databus.reset()
-      Databus.musicload = true
-      Databus.updateUI = this.tomusicUI.bind(this)
-      Databus.restart()
-    } else if((e.clientX > screenWidth * 0.75) &&
-    (e.clientX < screenWidth * 0.75 + LINE_HEIGHT  / MENU2_HEIGHT * MENU2_WIDTH) &&
-    (e.clientY > height) &&
-    (e.clientY < height + LINE_HEIGHT)) {
-      wx.offTouchStart(Databus.touchstart)
-      Databus.reset()
-      Databus.updateUI = this.tomenuUI.bind(this)
-      Databus.returnmenu()
-    }
   }
 
   originUI() {
@@ -329,6 +285,8 @@ export default class UI {
       ++frame
     } else {
       this.tomenuUI()
+      //wx.onTouchStart(Databus.touchstart)
+
     }
   }
 
@@ -336,7 +294,7 @@ export default class UI {
     haloscale = 1
     textscale = 1
     bgscale = 1
-    target = 0
+    target = 1
     frame = 0
     this.ctx.globalAlpha = 0
     Databus.bloomPass.radius = 1
@@ -365,13 +323,12 @@ export default class UI {
     if (target > 0) {
       this.ctx.drawImage(container, (screenWidth - width) / 2, screenHeight * 0.05, width, height)
       this.ctx.fillText(MUSICLIST[target - 1].name, screenWidth / 2, screenHeight * 0.05  + height / 2)
-    } else {
-      this.ctx.fillText("Slide menu,click to choose music", screenWidth / 2, screenHeight * 0.2)
     }
     if (target < MUSICLIST.length - 1) {
       this.ctx.drawImage(container, (screenWidth - width) / 2, screenHeight * 0.7, width, height)
       this.ctx.fillText(MUSICLIST[target + 1].name, screenWidth / 2, screenHeight * 0.7  + height / 2)
     }
+    
   }
 
   touchstart(e) {
@@ -379,7 +336,7 @@ export default class UI {
     Databus.touchpos.y = e.changedTouches[0].clientY
     Databus.touchpos.Id = e.changedTouches[0].identifier
   }
-
+  /*获取结束坐标和id*/
   touchend(e) {
     if(e.changedTouches[0].identifier === Databus.touchpos.Id){
       let h = e.changedTouches[0].clientY - Databus.touchpos.y
@@ -424,9 +381,6 @@ export default class UI {
         height = screenHeight * 0.25
         this.ctx.drawImage(container, (screenWidth - width) / 2, screenHeight * 0.05, width, height)
         this.ctx.fillText(MUSICLIST[target - 2].name, screenWidth / 2, screenHeight * 0.05  + height / 2)
-      } else if (target === 1) {
-        this.ctx.globalAlpha = m
-        this.ctx.fillText("Slide menu,click to choose music", screenWidth / 2, screenHeight * 0.2)
       }
       if(target < MUSICLIST.length - 1) {
         this.ctx.globalAlpha = n
@@ -452,9 +406,6 @@ export default class UI {
         height = screenHeight * 0.25
         this.ctx.drawImage(container, (screenWidth - width) / 2, screenHeight * 0.05, width, height)
         this.ctx.fillText(MUSICLIST[target - 1].name, screenWidth/ 2, screenHeight * 0.05  + height / 2)
-      } else {
-        this.ctx.globalAlpha = n
-        this.ctx.fillText("Slide menu,click to choose music", screenWidth / 2, screenHeight * 0.2)
       }
       if(target < MUSICLIST.length - 2) {
         this.ctx.globalAlpha = m
@@ -482,7 +433,6 @@ export default class UI {
     (e.clientY > (screenHeight - height) / 2) &&
     (e.clientY < (screenHeight - height) / 2 + height)) {
       Databus.reset()
-      Databus.musicload = true
       Databus.musicname = MUSICLIST[target].name
       Databus.keynum = MUSICLIST[target].keynum
       Databus.level= MUSICLIST[target].level
@@ -498,7 +448,6 @@ export default class UI {
       (e.clientY > screenHeight * 0.05) &&
       (e.clientY < screenHeight * 0.05 + height)) {
         Databus.reset()
-        Databus.musicload = true
         Databus.musicname = MUSICLIST[target - 1].name
         Databus.keynum = MUSICLIST[target - 1].keynum
         Databus.level= MUSICLIST[target - 1].level
@@ -511,7 +460,6 @@ export default class UI {
       (e.clientY > screenHeight * 0.7) &&
       (e.clientY < screenHeight * 0.7 + height)) {
         Databus.reset()
-        Databus.musicload = true
         Databus.musicname = MUSICLIST[target + 1].name
         Databus.keynum = MUSICLIST[target + 1].keynum
         Databus.level= MUSICLIST[target + 1].level
@@ -534,6 +482,7 @@ export default class UI {
     this.ctx.translate(screenWidth / 2, screenHeight / 2)
     this.ctx.rotate(Math.PI / 180 * degree)
     this.ctx.translate(- screenWidth / 2, - screenHeight / 2)
+    //this.ctx.globalAlpha = Math.cos(1.5 * Math.PI / 180 * degree) * 0.2 + 0.7
     this.ctx.drawImage(halo, (screenWidth - width) / 2, (screenHeight - height) / 2, width, height)
     this.ctx.translate(screenWidth / 2, screenHeight / 2)
     this.ctx.rotate(-Math.PI / 180 * degree)
@@ -545,17 +494,14 @@ export default class UI {
     this.ctx.drawImage(loading, (screenWidth - width) / 2, (screenHeight - height) / 2, width, height) 
     ++degree
     if(Databus.musicready) {
-      frame = 0
       Databus.updateUI = this.musicUI.bind(this)
+      console.log(Databus.updateUI)
       Databus.touchstart = this.musictouch.bind(this)
-      setTimeout(function() {wx.onTouchStart(Databus.touchstart)},1900)
+      wx.onTouchStart(Databus.touchstart)
     }
   }
 
   musicUI() {
-    if(frame < 100)
-      ++frame
-    let width = (frame + 100) / 4
     this.clear()
     this.ctx.drawImage(PAUSE, 35 - width / 2, 35 - width / 2, width, width)
     this.ctx.fillText(Databus.score, screenWidth * 0.5, 40)
@@ -570,14 +516,6 @@ export default class UI {
     var intersects = []
     //寻找命中的note
     event.touches.forEach((touch) => {
-      if((touch.clientX > 10) &&
-      (touch.clientX < 60) &&
-      (touch.clientY > 10) &&
-      (touch.clientY < 60)) {
-        Databus.updateUI = this.pauseUI.bind(this)
-        Databus.pause()
-        return
-      }
       pos.x = (touch.clientX / screenWidth) * 2 - 1;
       pos.y = - (touch.clientY / screenHeight) * 2 + 1;
       Databus.raycaster.setFromCamera(pos, Databus.camera)
@@ -607,75 +545,82 @@ export default class UI {
         default:
         break
       }})
+    console.log(result)
   }
 
   pauseUI() {
     this.clear()
     this.ctx.globalAlpha = 1
-    wx.offTouchStart(Databus.touchstart)
+    Databus.bloomPass.threshold = 0.28;
+    Databus.bloomPass.strength = 1.5 //params.bloomStrength;
+    Databus.bloomPass.radius = 1;
     let height = screenHeight
+    //height = screenHeight * (Math.cos(Math.PI / 180 * degree) * 0.2 + 1.2)
     let width = height / ENTRY_HEIGHT * ENTRY_WIDTH
     this.ctx.drawImage(entry, (screenWidth - width) / 2, (screenHeight - height) / 2, width, height)
-    width = screenWidth * 0.3
-    height = width / CONTAINER_WIDTH * CONTINUE_HEIGHT
-    let left = (screenWidth - width) / 2
-    this.ctx.drawImage(CONTINUE, left, (screenHeight - height) / 2 - height - 20, width, height)
-    width = height / RESTART_HEIGHT * RESTART_WIDTH
-    this.ctx.drawImage(RESTART, left, (screenHeight - height) / 2, width, height)
-    width = height / MENU_HEIGHT * MENU_WIDTH
-    this.ctx.drawImage(MENU, left, (screenHeight - height) / 2 + height + 20, width, height)
-    width = screenWidth * 0.4
-    this.ctx.drawImage(line2, (screenWidth - width) / 2, (screenHeight - height) / 2 - 15, width, 10)
-    this.ctx.drawImage(line2, (screenWidth - width) / 2, (screenHeight - height) / 2 + height + 5, width,10)
-    this.ctx.drawImage(line2, (screenWidth - width) / 2, (screenHeight - height) / 2 + 2 * height + 25, width, 10)
-    Databus.touchstart = this.pausetouch.bind(this)
-    wx.onTouchStart(Databus.touchstart)
+    console.log(1)
     ++degree
   }
 
-  pausetouch(e) {
-    e = e.touches[0]
-    let width = screenWidth * 0.3
-    let height = width / CONTAINER_WIDTH * CONTINUE_HEIGHT
-    let left = (screenWidth - width) / 2
-    if((e.clientX > left) &&
-    (e.clientX < left + width) &&
-    (e.clientY > (screenHeight - height) / 2 - height - 20) &&
-    (e.clientY < (screenHeight - height) / 2 - height - 20 + height)) {
-      console.log('continue')
-      wx.offTouchStart(Databus.touchstart)
-      Databus.touchstart = this.musictouch.bind(this)
-      wx.onTouchStart(Databus.touchstart)
-      Databus.updateUI = this.musicUI.bind(this)
-      Databus.continue()
-    } else {
-      width = height / RESTART_HEIGHT * RESTART_WIDTH
-      if((e.clientX > left) &&
-      (e.clientX < left + width) &&
-      (e.clientY > (screenHeight - height) / 2) &&
-      (e.clientY < (screenHeight - height) / 2 + height)) {
-        wx.offTouchStart(Databus.touchstart)
-        Databus.reset()
-        Databus.musicload = true
-        Databus.updateUI = this.tomusicUI.bind(this)
-        Databus.restart()
-      } else {
-        width = height / MENU_HEIGHT * MENU_WIDTH
-        if((e.clientX > left) &&
-        (e.clientX < left + width) &&
-        (e.clientY > (screenHeight - height) / 2 + height + 20) &&
-        (e.clientY < (screenHeight - height) / 2 + height + 20 + height)) {
-          wx.offTouchStart(Databus.touchstart)
-          Databus.reset()
-          Databus.updateUI = this.tomenuUI.bind(this)
-          Databus.returnmenu()
-        }
-      }
-    }
-  }
+
 
   clear() {
     this.ctx.clearRect(0, 0, screenWidth, screenHeight)
+  }
+
+  renderGameScore(ctx, score) {
+    ctx.fillStyle = "#ffffff"
+    ctx.font = "40px Arial"
+
+    ctx.fillText(
+      score,
+      10,
+      30
+    )
+  }
+
+  renderGameOver(ctx, score) {
+    ctx.drawImage(atlas, 0, 0, 119, 108, screenWidth / 2 - 150, screenHeight / 2 - 100, 300, 300)
+
+    ctx.fillStyle = "#ffffff"
+    ctx.font = "20px Arial"
+
+    ctx.fillText(
+      '游戏结束',
+      screenWidth / 2 - 40,
+      screenHeight / 2 - 100 + 50
+    )
+
+    ctx.fillText(
+      '得分: ' + score,
+      screenWidth / 2 - 40,
+      screenHeight / 2 - 100 + 130
+    )
+
+    ctx.drawImage(
+      atlas,
+      120, 6, 39, 24,
+      screenWidth / 2 - 60,
+      screenHeight / 2 - 100 + 180,
+      120, 40
+    )
+
+    ctx.fillText(
+      '重新开始',
+      screenWidth / 2 - 40,
+      screenHeight / 2 - 100 + 205
+    )
+
+    /**
+     * 重新开始按钮区域
+     * 方便简易判断按钮点击
+     */
+    this.btnArea = {
+      startX: screenWidth / 2 - 40,
+      startY: screenHeight / 2 - 100 + 180,
+      endX: screenWidth / 2 + 50,
+      endY: screenHeight / 2 - 100 + 255
+    }
   }
 }
 
