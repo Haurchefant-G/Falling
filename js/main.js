@@ -95,8 +95,8 @@ export default class Main {
     controls.enableRotate = false
     camera.lookAt(0, 0, 0)
 
-    // this.load()
-    this.remoteload()
+    this.load()
+    //this.remoteload()
     this.loadUI()
 
     // 添加环境光
